@@ -69,6 +69,19 @@
   .check-pill:hover  { border-color:var(--warn); }
   .check-pill.checked { border-color:var(--warn);background:rgba(245,158,11,0.1);color:var(--warn); }
 
+  /* District dropdown sous check-pill */
+  .district-dropdown-wrap {
+    margin-top:8px;
+    transition:all 0.2s;
+  }
+  .district-dropdown-wrap select {
+    border-color:rgba(245,158,11,0.4);
+  }
+  .district-dropdown-wrap select:focus {
+    border-color:var(--warn);
+    box-shadow:0 0 0 3px rgba(245,158,11,0.15);
+  }
+
   /* ERRORS */
   .field-error { font-size:0.75rem;color:var(--danger);margin-top:3px;display:none; }
   .has-error select,.has-error input { border-color:var(--danger)!important; }
@@ -126,10 +139,21 @@
   .dot { width:8px;height:8px;border-radius:50%;background:var(--muted); }
   .dot.connected { background:var(--accent2);box-shadow:0 0 6px var(--accent2); }
 
-  .info-box { background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);border-radius:8px;padding:10px 14px;font-size:0.8rem;color:#93c5fd;margin-top:10px; }
-
   #riposte-fields { display:none; }
   #riposte-fields.visible { display:block; }
+
+  /* Déplacement région layout */
+  .transport-row {
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:16px;
+  }
+  @media(max-width:540px){ .transport-row{ grid-template-columns:1fr; } }
+  .transport-col {
+    display:flex;
+    flex-direction:column;
+    gap:0;
+  }
 
   /* TOAST */
   #toast { position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:#1e2333;border:1px solid var(--border);border-radius:10px;padding:12px 20px;font-size:0.85rem;color:var(--text);display:flex;align-items:center;gap:10px;box-shadow:0 8px 32px rgba(0,0,0,0.4);transition:transform 0.35s cubic-bezier(0.34,1.56,0.64,1);z-index:999;max-width:90vw; }
@@ -264,7 +288,6 @@
       <tbody id="d-budget-body"></tbody>
       <tfoot><tr class="total-row"><td>TOTAL CSB + DISTRICT</td><td class="amount" id="d-budget-total">0</td></tr></tfoot>
     </table>
-    <div class="info-box">ℹ Simulation basée sur les hypothèses du niveau national.</div>
   </div>
 
   <!-- Actions district -->
@@ -293,7 +316,7 @@
     <div class="card-title ct-purple">Sélection de la Région</div>
     <div class="form-group" id="r-grp-region">
       <label class="flabel">Région <span class="req">*</span></label>
-      <select id="r-sel-region">
+      <select id="r-sel-region" onchange="r_onRegionChange()">
         <option value="">— Sélectionner une région —</option>
       </select>
       <span class="field-error">Veuillez sélectionner une région.</span>
@@ -304,13 +327,39 @@
     <div class="card-title ct-purple">Moyens de Déplacement – Équipe EMAR</div>
     <div class="form-group">
       <label class="flabel">Moyen(s) de déplacement <span class="req">*</span></label>
-      <div class="checkbox-group" style="margin-top:4px;">
-        <div class="check-pill" id="r-pill-voiture" onclick="r_toggle('voiture')">🚗 Voiture</div>
-        <div class="check-pill" id="r-pill-moto"    onclick="r_toggle('moto')">🏍 Moto</div>
-      </div>
-    </div>
-    <div class="info-box" style="margin-top:14px;">
-      Valeurs enregistrées : <strong style="color:var(--warn)">V</strong> Voiture → colonne B &nbsp;|&nbsp; <strong style="color:#60a5fa">M</strong> Moto → colonne C dans la feuille <em>Base région</em>.
+
+      <!-- Layout deux colonnes : voiture | moto -->
+      <div class="transport-row" style="margin-top:4px;">
+
+        <!-- Colonne Voiture -->
+        <div class="transport-col" id="r-col-voiture">
+          <div class="check-pill" id="r-pill-voiture" onclick="r_toggle('voiture')">🚗 Voiture</div>
+          <div class="district-dropdown-wrap" id="r-voiture-district-wrap" style="display:none;">
+            <div class="form-group" id="r-grp-district-voiture" style="margin-top:0;">
+              <label class="flabel" style="margin-top:8px;">District (Voiture) <span class="req">*</span></label>
+              <select id="r-sel-district-voiture" disabled>
+                <option value="">— Sélectionner un district —</option>
+              </select>
+              <span class="field-error">Veuillez sélectionner un district.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Colonne Moto -->
+        <div class="transport-col" id="r-col-moto">
+          <div class="check-pill" id="r-pill-moto" onclick="r_toggle('moto')">🏍 Moto</div>
+          <div class="district-dropdown-wrap" id="r-moto-district-wrap" style="display:none;">
+            <div class="form-group" id="r-grp-district-moto" style="margin-top:0;">
+              <label class="flabel" style="margin-top:8px;">District (Moto) <span class="req">*</span></label>
+              <select id="r-sel-district-moto" disabled>
+                <option value="">— Sélectionner un district —</option>
+              </select>
+              <span class="field-error">Veuillez sélectionner un district.</span>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /transport-row -->
     </div>
   </div>
 
@@ -322,7 +371,6 @@
       <tbody id="r-budget-body"></tbody>
       <tfoot><tr class="total-row"><td>TOTAL EMAR</td><td class="amount" id="r-budget-total">0</td></tr></tfoot>
     </table>
-    <div class="info-box">ℹ Simulation basée sur les hypothèses du niveau national.</div>
   </div>
 
   <!-- Actions région -->
@@ -375,8 +423,6 @@ const REGIONS_DISTRICTS = {
   "VAKINANKARATRA":["AMBATOLAMPY","ANTANIFOTSY","ANTSIRABE I","ANTSIRABE II","FARATSIHO","BETAFO","MANDOTO"],
   "VATOVAVY":["IFANADIANA","MANANJARY","NOSY VARIKA"]
 };
-
-const DISTANCES = {"AMBATONDRAZAKA":0,"AMPARAFARAVOLA":150,"ANDILAMENA":390,"ANOSIBE AN'ALA":462,"MORAMANGA":320,"AMBATOFINANDRAHANA":156,"AMBOSITRA":0,"FANDRIANA":84,"MANANDRIANA":120,"AMBOHIDRATRIMO":36,"ANKAZOBE":192,"ANDRAMASINA":84,"ANTANANARIVO ATSIMONDRANO":30,"ANJOZOROBE":192,"ANTANANARIVO AVARADRANO":30,"ANTANANARIVO RENIVOHITRA":0,"MANJAKANDRIANA":90,"FENERIVE EST":0,"VAVATENINA":100,"SAINTE MARIE":0,"SOANIERANA IVONGO":120,"MANANARA NORD":380,"MAROANTSETRA":610,"AMBOVOMBE":0,"ANTANIMORA":160,"BEKILY":464,"BELOHA":250,"TSIHOMBE":140,"AMBOASARY SUD":150,"BETROKA":760,"TOLAGNARO":0,"BEFOTAKA":430,"MIDONGY DU SUD":350,"FARAFANGANA":0,"VANGAINDRANO":150,"VONDROZO":140,"AMPANIHY ANDREFANA":600,"BETIOKY-SUD":330,"BENENITRA":500,"SAKARAHA":270,"ANKAZOABO":520,"BEROROHA":710,"MOROMBE":570,"TOLIARA II":0,"TOLIARA I":0,"ANTANAMBAO MANAMPOTSY":610,"MAHANORO":580,"MAROLAMBO":840,"TOAMASINA I":0,"TOAMASINA II":0,"BRICKAVILLE":270,"VATOMANDRY":440,"KANDREHO":300,"MAEVATANANA":0,"TSARATANANA NORD":360,"TSARATANANA SUD":1388,"AMBATO-BOENI":310,"MAROVOAY":200,"MAHAJANGA I":0,"MAHAJANGA II":0,"MITSINJO":180,"SOALALA":360,"FENOARIVOBE":300,"TSIROANOMANDIDY":0,"AMBANJA":478,"AMBILOBE":270,"ANTSIRANANA I":0,"ANTSIRANANA II":0,"NOSY BE":598,"IKONGO":550,"MANAKARA":0,"VOHIPENO":90,"AMBALAVAO":106,"FII_VOHIBATO":50,"AMBOHIMAHASOA":130,"FIANARANTSOA I":0,"FII_LALANGINA":30,"FII_ISANDRA":60,"IKALAMAVONY":190,"IAKORA":280,"IHOSY":0,"IVOHIBE":220,"ARIVONIMAMO":90,"MIARINARIVO":0,"SOAVINANDRIANA":130,"AMBATOMAINTY":550,"MORAFENOBE":310,"ANTSALOVA":250,"MAINTIRANO":0,"BESALAMPY":420,"BELO/TSIRIBIHINA":310,"MORONDAVA":0,"MANJA":380,"MIANDRIVAZO":580,"MAHABO":110,"ANDAPA":240,"ANTALAHA":180,"SAMBAVA":0,"VOHEMAR":300,"ANALALAVA":180,"ANTSOHIHY":0,"BEALALANA":260,"MAMPIKONY":440,"PORT-BERGER":270,"MANDRITSARA":440,"BEFANDRIANA NORD":180,"AMBATOLAMPY":200,"ANTANIFOTSY":120,"ANTSIRABE I":0,"ANTSIRABE II":0,"FARATSIHO":164,"BETAFO":50,"MANDOTO":220,"IFANADIANA":240,"MANANJARY":0,"NOSY VARIKA":250};
 
 const HYP_D = { as_csb:2, jours_descente:5, jour_ac:1, indem_district:62000, indem_csb:62000, indem_ac:10000, nb_emad_voiture:3, nb_emad_moto:2, carburant_l_km:0.05, prix_essence:5100, dist_csb_fkt:20, dist_district_csb:80, prix_loc_moto:70000, nb_moto_district:2, carburant_veh_adm:0.15, prix_gasoil:4860 };
 const HYP_R = { nb_emar_voiture:3, nb_emar_moto:1, indem_region:100000, jours_emar:5, rayonnage_emar:50, prix_loc_moto_region:70000, nb_moto_region:1, carburant_veh_adm:0.15, prix_gasoil:4860, carburant_l_km:0.05, prix_essence:5100 };
@@ -557,7 +603,6 @@ function d_submit() {
     moto:     d_moto    ? 'M' : ''
   };
   sendToSheet(payload, () => {
-    localStorage.setItem('d_data_'+payload.district.replace(/\s/g,'_'), JSON.stringify(payload));
     showToast('✓ Données district enregistrées !','success');
     d_clearFields(false);
   });
@@ -566,63 +611,31 @@ function d_submit() {
 // ═══════════════════════════════════════════════════════
 //  DISTRICT – Charger / Réinitialiser
 // ═══════════════════════════════════════════════════════
-
 async function d_loadData() {
-
   const region = document.getElementById('d-sel-region').value;
   const district = document.getElementById('d-sel-district').value;
-
-  if (!region || !district) {
-    showToast('Sélectionnez région et district.', 'error');
-    return;
-  }
-
+  if (!region || !district) { showToast('Sélectionnez région et district.', 'error'); return; }
   try {
-
     showToast('Chargement des données…','');
-
-    const url =
-      `${GS_URL}?action=getDistrict`
-      + `&region=${encodeURIComponent(region)}`
-      + `&district=${encodeURIComponent(district)}`;
-
+    const url = `${GS_URL}?action=getDistrict&region=${encodeURIComponent(region)}&district=${encodeURIComponent(district)}`;
     const response = await fetch(url);
-
     const data = await response.json();
-
-    if (data.status !== 'ok') {
-
-      showToast(data.message || 'Aucune donnée trouvée.', 'error');
-      return;
-    }
-
+    if (data.status !== 'ok') { showToast(data.message || 'Aucune donnée trouvée.', 'error'); return; }
     d_setRiposte(data.riposte);
-
     document.getElementById('d-nb-csb').value = data.nb_csb || '';
     document.getElementById('d-nb-fkt').value = data.nb_fkt || '';
     document.getElementById('d-nb-ac').value  = data.nb_ac || '';
-
     d_voiture = data.voiture === 'V';
     d_moto    = data.moto === 'M';
-
-    document.getElementById('d-pill-voiture').className =
-      'check-pill' + (d_voiture ? ' checked' : '');
-
-    document.getElementById('d-pill-moto').className =
-      'check-pill' + (d_moto ? ' checked' : '');
-
+    document.getElementById('d-pill-voiture').className = 'check-pill' + (d_voiture ? ' checked' : '');
+    document.getElementById('d-pill-moto').className    = 'check-pill' + (d_moto    ? ' checked' : '');
     d_updateSimulator();
-
     showToast('Données chargées depuis Google Sheet', 'success');
-
   } catch (err) {
-
     console.error(err);
-
     showToast('Erreur de lecture Google Sheet', 'error');
   }
 }
-
 
 function d_clearFields(resetSelects) {
   ['d-nb-fs','d-nb-csb','d-nb-fkt','d-nb-ac'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
@@ -644,11 +657,53 @@ function d_clearFields(resetSelects) {
 function d_reset() { d_clearFields(true); }
 
 // ═══════════════════════════════════════════════════════
-//  RÉGION – Déplacement
+//  RÉGION – Cascade région → listes districts
+// ═══════════════════════════════════════════════════════
+function r_onRegionChange() {
+  const region = document.getElementById('r-sel-region').value;
+
+  // Réinitialiser les deux listes district
+  ['r-sel-district-voiture','r-sel-district-moto'].forEach(id => {
+    const sel = document.getElementById(id);
+    sel.innerHTML = '<option value="">— Sélectionner un district —</option>';
+    if (region && REGIONS_DISTRICTS[region]) {
+      REGIONS_DISTRICTS[region].forEach(d => sel.appendChild(new Option(d, d)));
+      sel.disabled = false;
+    } else {
+      sel.disabled = true;
+    }
+  });
+
+  // Réinitialiser les toggles
+  r_voiture = false; r_moto = false;
+  document.getElementById('r-pill-voiture').className = 'check-pill';
+  document.getElementById('r-pill-moto').className    = 'check-pill';
+  document.getElementById('r-voiture-district-wrap').style.display = 'none';
+  document.getElementById('r-moto-district-wrap').style.display    = 'none';
+  document.getElementById('r-budget').classList.remove('visible');
+}
+
+// ═══════════════════════════════════════════════════════
+//  RÉGION – Déplacement (avec affichage dropdown district)
 // ═══════════════════════════════════════════════════════
 function r_toggle(type) {
-  if (type==='voiture') { r_voiture=!r_voiture; document.getElementById('r-pill-voiture').className='check-pill'+(r_voiture?' checked':''); }
-  else                  { r_moto=!r_moto;       document.getElementById('r-pill-moto').className='check-pill'+(r_moto?' checked':''); }
+  if (type === 'voiture') {
+    r_voiture = !r_voiture;
+    document.getElementById('r-pill-voiture').className = 'check-pill' + (r_voiture ? ' checked' : '');
+    document.getElementById('r-voiture-district-wrap').style.display = r_voiture ? 'block' : 'none';
+    if (!r_voiture) {
+      document.getElementById('r-sel-district-voiture').value = '';
+      setErr('r-grp-district-voiture', false);
+    }
+  } else {
+    r_moto = !r_moto;
+    document.getElementById('r-pill-moto').className = 'check-pill' + (r_moto ? ' checked' : '');
+    document.getElementById('r-moto-district-wrap').style.display = r_moto ? 'block' : 'none';
+    if (!r_moto) {
+      document.getElementById('r-sel-district-moto').value = '';
+      setErr('r-grp-district-moto', false);
+    }
+  }
 }
 
 // ═══════════════════════════════════════════════════════
@@ -677,23 +732,38 @@ function r_runSimulator() {
 //  RÉGION – Validation & Soumission
 // ═══════════════════════════════════════════════════════
 function r_validate() {
+  let ok = true;
   const region = document.getElementById('r-sel-region').value;
-  setErr('r-grp-region',!region);
-  if (!region) { return false; }
-  if (!r_voiture&&!r_moto) { showToast('Sélectionnez au moins un moyen de déplacement.','error'); return false; }
-  return true;
+  setErr('r-grp-region', !region);
+  if (!region) ok = false;
+  if (!r_voiture && !r_moto) {
+    showToast('Sélectionnez au moins un moyen de déplacement.','error');
+    ok = false;
+  }
+  if (r_voiture) {
+    const dv = document.getElementById('r-sel-district-voiture').value;
+    setErr('r-grp-district-voiture', !dv);
+    if (!dv) ok = false;
+  }
+  if (r_moto) {
+    const dm = document.getElementById('r-sel-district-moto').value;
+    setErr('r-grp-district-moto', !dm);
+    if (!dm) ok = false;
+  }
+  return ok;
 }
 
 function r_submit() {
   if (!r_validate()) return;
   const payload = {
-    action:  'updateRegion',
-    region:  document.getElementById('r-sel-region').value,
-    voiture: r_voiture ? 'V' : '',
-    moto:    r_moto    ? 'M' : ''
+    action:           'updateRegion',
+    region:           document.getElementById('r-sel-region').value,
+    voiture:          r_voiture ? 'V' : '',
+    district_voiture: r_voiture ? document.getElementById('r-sel-district-voiture').value : '',
+    moto:             r_moto    ? 'M' : '',
+    district_moto:    r_moto    ? document.getElementById('r-sel-district-moto').value    : ''
   };
   sendToSheet(payload, () => {
-    localStorage.setItem('r_data_'+payload.region.replace(/\s/g,'_'), JSON.stringify(payload));
     showToast('✓ Données région enregistrées !','success');
     r_clearFields(false);
   });
@@ -703,98 +773,105 @@ function r_submit() {
 //  RÉGION – Charger / Réinitialiser
 // ═══════════════════════════════════════════════════════
 async function r_loadData() {
-
   const region = document.getElementById('r-sel-region').value;
-
-  if (!region) {
-    showToast('Sélectionnez une région.', 'error');
-    return;
-  }
-
+  if (!region) { showToast('Sélectionnez une région.', 'error'); return; }
   try {
-
-    const url =
-      `${GS_URL}?action=getRegion`
-      + `&region=${encodeURIComponent(region)}`;
-
+    showToast('Chargement des données…','');
+    const url = `${GS_URL}?action=getRegion&region=${encodeURIComponent(region)}`;
     const response = await fetch(url);
-
     const data = await response.json();
+    if (data.status !== 'ok') { showToast(data.message || 'Aucune donnée trouvée.', 'error'); return; }
 
-    if (data.status !== 'ok') {
-      showToast(data.message || 'Aucune donnée trouvée.', 'error');
-      return;
+    // data.rows = [{ district, voiture, moto }, ...]
+    const rows = data.rows || [];
+
+    // Chercher une ligne avec voiture = 'V'
+    const rowV = rows.find(r => r.voiture === 'V');
+    // Chercher une ligne avec moto = 'M'
+    const rowM = rows.find(r => r.moto === 'M');
+
+    r_voiture = !!rowV;
+    r_moto    = !!rowM;
+
+    document.getElementById('r-pill-voiture').className = 'check-pill' + (r_voiture ? ' checked' : '');
+    document.getElementById('r-pill-moto').className    = 'check-pill' + (r_moto    ? ' checked' : '');
+
+    // Afficher / pré-remplir dropdown voiture
+    document.getElementById('r-voiture-district-wrap').style.display = r_voiture ? 'block' : 'none';
+    if (r_voiture && rowV.district) {
+      const selV = document.getElementById('r-sel-district-voiture');
+      selV.disabled = false;
+      // Peupler si vide
+      if (selV.options.length <= 1) {
+        REGIONS_DISTRICTS[region]?.forEach(d => selV.appendChild(new Option(d, d)));
+      }
+      selV.value = rowV.district;
     }
 
-    r_voiture = data.voiture === 'V';
-    r_moto    = data.moto === 'M';
-
-    document.getElementById('r-pill-voiture').className =
-      'check-pill' + (r_voiture ? ' checked' : '');
-
-    document.getElementById('r-pill-moto').className =
-      'check-pill' + (r_moto ? ' checked' : '');
+    // Afficher / pré-remplir dropdown moto
+    document.getElementById('r-moto-district-wrap').style.display = r_moto ? 'block' : 'none';
+    if (r_moto && rowM.district) {
+      const selM = document.getElementById('r-sel-district-moto');
+      selM.disabled = false;
+      if (selM.options.length <= 1) {
+        REGIONS_DISTRICTS[region]?.forEach(d => selM.appendChild(new Option(d, d)));
+      }
+      selM.value = rowM.district;
+    }
 
     showToast('Données chargées depuis Google Sheet', 'success');
-
   } catch (err) {
-
     console.error(err);
-
     showToast('Erreur de lecture Google Sheet', 'error');
   }
 }
 
 function r_clearFields(resetSelect) {
-  r_voiture=false; r_moto=false;
-  document.getElementById('r-pill-voiture').className='check-pill';
-  document.getElementById('r-pill-moto').className='check-pill';
+  r_voiture = false; r_moto = false;
+  document.getElementById('r-pill-voiture').className = 'check-pill';
+  document.getElementById('r-pill-moto').className    = 'check-pill';
+  document.getElementById('r-voiture-district-wrap').style.display = 'none';
+  document.getElementById('r-moto-district-wrap').style.display    = 'none';
+  document.getElementById('r-sel-district-voiture').value = '';
+  document.getElementById('r-sel-district-moto').value    = '';
   document.getElementById('r-budget').classList.remove('visible');
-  setErr('r-grp-region',false);
-  if (resetSelect) document.getElementById('r-sel-region').value='';
+  ['r-grp-region','r-grp-district-voiture','r-grp-district-moto'].forEach(id => setErr(id, false));
+  if (resetSelect) {
+    document.getElementById('r-sel-region').value = '';
+    ['r-sel-district-voiture','r-sel-district-moto'].forEach(id => {
+      const sel = document.getElementById(id);
+      sel.innerHTML = '<option value="">— Sélectionner un district —</option>';
+      sel.disabled = true;
+    });
+  }
 }
 function r_reset() { r_clearFields(true); }
 
 // ═══════════════════════════════════════════════════════
-//  ENVOI GOOGLE SHEET (via fetch no-cors)
-//  Fallback iframe si fetch bloqué
+//  ENVOI GOOGLE SHEET
 // ═══════════════════════════════════════════════════════
 async function sendToSheet(payload, onSuccess) {
-
   showToast('Envoi en cours…','');
-
   try {
-
     const response = await fetch(GS_URL, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'text/plain;charset=utf-8'
-      },
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(payload)
     });
-
     const result = await response.json();
-
     if (result.status === 'ok') {
-
       showToast(result.message, 'success');
-
       if (onSuccess) onSuccess();
-
     } else {
-
       showToast(result.message || 'Erreur Apps Script', 'error');
-
       console.error(result);
     }
-
   } catch (err) {
-
     console.error(err);
-
     showToast('Erreur de connexion avec Google Sheet', 'error');
   }
 }
+
 // ═══════════════════════════════════════════════════════
 //  UTILITAIRES
 // ═══════════════════════════════════════════════════════
