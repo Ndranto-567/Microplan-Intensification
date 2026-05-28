@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Riposte Rougeole – Saisie des données</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg:#0f1117; --surface:#181c27; --surface2:#1e2333; --border:#2a3045;
+    --accent:#3b82f6; --accent2:#10b981; --danger:#ef4444; --warn:#f59e0b;
+    --purple:#8b5cf6; --text:#e2e8f0; --muted:#64748b; --label:#94a3b8;
+  }
+
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'Outfit',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; padding:0 0 80px; }
+
+  /* HEADER */
+  header { background:linear-gradient(135deg,#1a2744 0%,#0f1117 100%); border-bottom:1px solid var(--border); padding:20px 32px; display:flex; align-items:center; gap:16px; }
+  .header-icon { width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0; }
+  .icon-district { background:#3b82f6; }
+  .icon-region   { background:#8b5cf6; }
+  .icon-home     { background:#10b981; }
+  header h1 { font-size:1.3rem;font-weight:600;color:#fff; }
+  header p  { font-size:0.82rem;color:#94a3b8;margin-top:2px; }
+
+  /* CONTAINER */
+  .container { max-width:780px;margin:0 auto;padding:28px 20px; }
+
+  /* CARDS */
+  .card { background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;margin-bottom:20px; }
+  .card-title { font-size:0.78rem;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:18px;display:flex;align-items:center;gap:8px; }
+  .card-title::before { content:'';display:inline-block;width:3px;height:14px;border-radius:2px; }
+  .ct-blue  { color:var(--accent); }
+  .ct-blue::before  { background:var(--accent); }
+  .ct-purple{ color:var(--purple); }
+  .ct-purple::before{ background:var(--purple); }
+  .ct-green { color:var(--accent2); }
+  .ct-green::before { background:var(--accent2); }
+
+  /* FORM ELEMENTS */
+  .form-row { display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px; }
+  @media(max-width:540px){ .form-row{ grid-template-columns:1fr; } }
+  .form-group { display:flex;flex-direction:column;gap:6px; }
+  label.flabel { font-size:0.8rem;font-weight:500;color:var(--label); }
+  label.flabel span.req { color:var(--danger);margin-left:2px; }
+
+  select, input[type="number"] {
+    background:var(--surface2);border:1px solid var(--border);border-radius:8px;
+    color:var(--text);font-family:inherit;font-size:0.92rem;padding:10px 14px;
+    transition:border-color 0.2s,box-shadow 0.2s;width:100%;
+  }
+  select:focus,input[type="number"]:focus { outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(59,130,246,0.15); }
+  select option { background:#1e2333; }
+  select:disabled { opacity:0.4;cursor:not-allowed; }
+
+  /* RADIO PILLS (riposte) */
+  .radio-group { display:flex;gap:12px; }
+  .radio-pill { flex:1;display:flex;align-items:center;justify-content:center;gap:8px;padding:10px 16px;background:var(--surface2);border:2px solid var(--border);border-radius:8px;cursor:pointer;font-size:0.9rem;font-weight:500;transition:all 0.2s;user-select:none; }
+  .radio-pill.yes:hover { border-color:var(--accent2); }
+  .radio-pill.no:hover  { border-color:var(--danger); }
+  .radio-pill.selected-yes { border-color:var(--accent2);background:rgba(16,185,129,0.1);color:var(--accent2); }
+  .radio-pill.selected-no  { border-color:var(--danger);background:rgba(239,68,68,0.1);color:var(--danger); }
+
+  /* CHECK PILLS (déplacement) */
+  .checkbox-group { display:flex;gap:12px; }
+  .check-pill { flex:1;display:flex;align-items:center;justify-content:center;gap:8px;padding:12px 16px;background:var(--surface2);border:2px solid var(--border);border-radius:8px;cursor:pointer;font-size:0.9rem;font-weight:500;transition:all 0.2s;user-select:none; }
+  .check-pill:hover  { border-color:var(--warn); }
+  .check-pill.checked { border-color:var(--warn);background:rgba(245,158,11,0.1);color:var(--warn); }
+
+  /* ERRORS */
+  .field-error { font-size:0.75rem;color:var(--danger);margin-top:3px;display:none; }
+  .has-error select,.has-error input { border-color:var(--danger)!important; }
+  .has-error .field-error { display:block; }
+
+  /* NIVEAU SELECTOR (page d'accueil) */
+  #page-home { display:block; }
+  #page-district { display:none; }
+  #page-region { display:none; }
+
+  .niveau-cards { display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:20px; }
+  @media(max-width:480px){ .niveau-cards{ grid-template-columns:1fr; } }
+  .niveau-card {
+    background:var(--surface2);border:2px solid var(--border);border-radius:16px;
+    padding:28px 20px;cursor:pointer;transition:all 0.25s;text-align:center;
+  }
+  .niveau-card:hover { transform:translateY(-3px);box-shadow:0 8px 32px rgba(0,0,0,0.3); }
+  .niveau-card.district:hover { border-color:var(--accent); }
+  .niveau-card.region:hover   { border-color:var(--purple); }
+  .niveau-card .nc-icon { font-size:2.5rem;margin-bottom:12px; }
+  .niveau-card .nc-title { font-size:1.1rem;font-weight:700;margin-bottom:6px; }
+  .niveau-card .nc-desc  { font-size:0.8rem;color:var(--muted); }
+  .niveau-card.district .nc-title { color:var(--accent); }
+  .niveau-card.region   .nc-title { color:var(--purple); }
+
+  /* BUDGET TABLE */
+  .budget-wrap { display:none;background:var(--surface);border:1px solid #2a4080;border-radius:16px;padding:24px;margin-bottom:20px; }
+  .budget-wrap.visible { display:block; }
+  .budget-table { width:100%;border-collapse:collapse;font-size:0.82rem;margin-top:14px; }
+  .budget-table th { background:#1a2744;color:var(--label);font-weight:600;text-align:left;padding:8px 12px;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.05em; }
+  .budget-table td { padding:8px 12px;border-bottom:1px solid var(--border);color:var(--text); }
+  .budget-table tr:last-child td { border-bottom:none; }
+  .budget-table .total-row td { font-weight:700;color:var(--accent2);background:rgba(16,185,129,0.05); }
+  .budget-table .amount { text-align:right;font-family:'JetBrains Mono',monospace; }
+  .sub-row td { font-weight:600;color:#94a3b8; }
+
+  /* BUTTONS */
+  .btn-row { display:flex;gap:12px;flex-wrap:wrap; }
+  .btn { padding:11px 22px;border-radius:8px;border:none;cursor:pointer;font-family:inherit;font-size:0.9rem;font-weight:600;display:flex;align-items:center;gap:8px;transition:all 0.2s; }
+  .btn-primary   { background:var(--accent);color:#fff; }
+  .btn-primary:hover { background:#2563eb;transform:translateY(-1px); }
+  .btn-purple    { background:var(--purple);color:#fff; }
+  .btn-purple:hover  { background:#7c3aed;transform:translateY(-1px); }
+  .btn-secondary { background:var(--surface2);color:var(--text);border:1px solid var(--border); }
+  .btn-secondary:hover { border-color:var(--accent);color:var(--accent); }
+  .btn-simulate  { background:rgba(245,158,11,0.15);color:var(--warn);border:1px solid rgba(245,158,11,0.3); }
+  .btn-simulate:hover { background:rgba(245,158,11,0.25); }
+  .btn-load      { background:rgba(59,130,246,0.15);color:var(--accent);border:1px solid rgba(59,130,246,0.3); }
+  .btn-load:hover { background:rgba(59,130,246,0.25); }
+  .btn-back      { background:rgba(100,116,139,0.15);color:var(--muted);border:1px solid rgba(100,116,139,0.2); }
+  .btn-back:hover { background:rgba(100,116,139,0.25); }
+
+  /* STATUS BAR */
+  .status-bar { background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 16px;font-size:0.8rem;color:var(--muted);margin-bottom:20px;display:flex;align-items:center;gap:8px; }
+  .dot { width:8px;height:8px;border-radius:50%;background:var(--muted); }
+  .dot.connected { background:var(--accent2);box-shadow:0 0 6px var(--accent2); }
+
+  .info-box { background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);border-radius:8px;padding:10px 14px;font-size:0.8rem;color:#93c5fd;margin-top:10px; }
+
+  #riposte-fields { display:none; }
+  #riposte-fields.visible { display:block; }
+
+  /* TOAST */
+  #toast { position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:#1e2333;border:1px solid var(--border);border-radius:10px;padding:12px 20px;font-size:0.85rem;color:var(--text);display:flex;align-items:center;gap:10px;box-shadow:0 8px 32px rgba(0,0,0,0.4);transition:transform 0.35s cubic-bezier(0.34,1.56,0.64,1);z-index:999;max-width:90vw; }
+  #toast.show { transform:translateX(-50%) translateY(0); }
+  #toast.success { border-color:var(--accent2); }
+  #toast.error   { border-color:var(--danger); }
+
+  /* hidden iframe for CORS-free POST */
+  #gs-iframe { display:none; }
+</style>
+</head>
+<body>
+
+<!-- ============ HEADER ============ -->
+<header id="main-header">
+  <div class="header-icon icon-home" id="header-icon">🦠</div>
+  <div>
+    <h1 id="header-title">Microplan - Intensification/Riposte Rougeole</h1>
+    <p id="header-sub">Sélectionnez votre niveau de saisie</p>
+  </div>
+</header>
+
+<!-- ============ IFRAME INVISIBLE (envoi CORS-free) ============ -->
+<iframe id="gs-iframe" name="gs-iframe"></iframe>
+<form id="gs-form" method="POST" target="gs-iframe" style="display:none;">
+  <input type="hidden" name="payload" id="gs-payload">
+</form>
+
+<!-- ============ PAGE ACCUEIL ============ -->
+<div id="page-home" class="container">
+  <div class="card">
+    <div class="card-title ct-green">Sélection du niveau de saisie</div>
+    <p style="font-size:0.88rem;color:var(--label);margin-bottom:4px;">Choisissez votre niveau pour accéder au formulaire correspondant.</p>
+    <div class="niveau-cards">
+      <div class="niveau-card district" onclick="showPage('district')">
+        <div class="nc-icon">🏥</div>
+        <div class="nc-title">Niveau District</div>
+        <div class="nc-desc">Saisie des données EMAD et CSB par district</div>
+      </div>
+      <div class="niveau-card region" onclick="showPage('region')">
+        <div class="nc-icon">🗺</div>
+        <div class="nc-title">Niveau Régional</div>
+        <div class="nc-desc">Saisie des données EMAR par région</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ PAGE DISTRICT ============ -->
+<div id="page-district" class="container">
+
+  <div class="status-bar">
+    <div class="dot connected"></div>
+    <span>Google Sheet connecté – Formulaire District</span>
+    <button class="btn btn-back" style="margin-left:auto;padding:6px 14px;font-size:0.78rem;" onclick="showPage('home')">← Retour</button>
+  </div>
+
+  <!-- Localisation -->
+  <div class="card">
+    <div class="card-title ct-blue">Localisation</div>
+    <div class="form-row">
+      <div class="form-group" id="d-grp-region">
+        <label class="flabel">Région <span class="req">*</span></label>
+        <select id="d-sel-region" onchange="d_updateDistricts()">
+          <option value="">— Sélectionner une région —</option>
+        </select>
+        <span class="field-error">Veuillez sélectionner une région.</span>
+      </div>
+      <div class="form-group" id="d-grp-district">
+        <label class="flabel">District <span class="req">*</span></label>
+        <select id="d-sel-district" disabled onchange="d_onDistrictChange()">
+          <option value="">— Sélectionner un district —</option>
+        </select>
+        <span class="field-error">Veuillez sélectionner un district.</span>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="flabel">Nombre total de FS/CSB <span class="req">*</span></label>
+        <input type="number" id="d-nb-fs" min="0" placeholder="Ex: 24" oninput="d_updateSimulator()">
+      </div>
+    </div>
+  </div>
+
+  <!-- Riposte -->
+  <div class="card">
+    <div class="card-title ct-blue">Statut de la Riposte</div>
+    <div class="form-group">
+      <label class="flabel">Riposte en cours dans ce district ? <span class="req">*</span></label>
+      <div class="radio-group">
+        <div class="radio-pill yes" id="d-pill-oui" onclick="d_setRiposte('Y')">✅ Oui</div>
+        <div class="radio-pill no"  id="d-pill-non" onclick="d_setRiposte('N')">✗ Non</div>
+      </div>
+    </div>
+
+    <div id="riposte-fields">
+      <div style="height:16px;"></div>
+      <div class="form-row">
+        <div class="form-group" id="d-grp-nb-csb">
+          <label class="flabel">Nb FS/CSB avec ≥ 1 cas de rougeole <span class="req">*</span></label>
+          <input type="number" id="d-nb-csb" min="0" placeholder="Ex: 5" oninput="d_updateSimulator()">
+          <span class="field-error" id="d-err-csb">Doit être ≤ au nombre total de FS.</span>
+        </div>
+        <div class="form-group" id="d-grp-nb-fkt">
+          <label class="flabel">Nb fokontany / secteurs concernés <span class="req">*</span></label>
+          <input type="number" id="d-nb-fkt" min="0" placeholder="Ex: 12" oninput="d_updateSimulator()">
+          <span class="field-error">Champ requis.</span>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group" id="d-grp-nb-ac">
+          <label class="flabel">Nb d'AC dans les fokontany / secteurs <span class="req">*</span></label>
+          <input type="number" id="d-nb-ac" min="0" placeholder="Ex: 24" oninput="d_updateSimulator()">
+          <span class="field-error">Champ requis.</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="flabel">Moyen(s) de déplacement <span class="req">*</span></label>
+        <div class="checkbox-group" style="margin-top:4px;">
+          <div class="check-pill" id="d-pill-voiture" onclick="d_toggle('voiture')">🚗 Voiture</div>
+          <div class="check-pill" id="d-pill-moto"    onclick="d_toggle('moto')">🏍 Moto</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Simulateur budget district -->
+  <div class="budget-wrap" id="d-budget">
+    <div class="card-title ct-blue" style="margin-bottom:16px;">💰 Simulateur de Budget – <span id="d-sim-name">-</span></div>
+    <table class="budget-table">
+      <thead><tr><th>Ligne budgétaire</th><th class="amount">Montant (Ar)</th></tr></thead>
+      <tbody id="d-budget-body"></tbody>
+      <tfoot><tr class="total-row"><td>TOTAL CSB + DISTRICT</td><td class="amount" id="d-budget-total">0</td></tr></tfoot>
+    </table>
+    <div class="info-box">ℹ Simulation basée sur les hypothèses du niveau national.</div>
+  </div>
+
+  <!-- Actions district -->
+  <div class="card">
+    <div class="card-title ct-blue">Actions</div>
+    <div class="btn-row">
+      <button class="btn btn-simulate" onclick="d_runSimulator()">📊 Simuler le budget</button>
+      <button class="btn btn-load"     onclick="d_loadData()">📂 Charger données existantes</button>
+      <button class="btn btn-primary"  onclick="d_submit()">💾 Enregistrer dans Google Sheet</button>
+      <button class="btn btn-secondary" onclick="d_reset()">🔄 Réinitialiser</button>
+    </div>
+  </div>
+
+</div><!-- /page-district -->
+
+<!-- ============ PAGE RÉGION ============ -->
+<div id="page-region" class="container">
+
+  <div class="status-bar">
+    <div class="dot connected"></div>
+    <span>Google Sheet connecté – Formulaire Région</span>
+    <button class="btn btn-back" style="margin-left:auto;padding:6px 14px;font-size:0.78rem;" onclick="showPage('home')">← Retour</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title ct-purple">Sélection de la Région</div>
+    <div class="form-group" id="r-grp-region">
+      <label class="flabel">Région <span class="req">*</span></label>
+      <select id="r-sel-region">
+        <option value="">— Sélectionner une région —</option>
+      </select>
+      <span class="field-error">Veuillez sélectionner une région.</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title ct-purple">Moyens de Déplacement – Équipe EMAR</div>
+    <div class="form-group">
+      <label class="flabel">Moyen(s) de déplacement <span class="req">*</span></label>
+      <div class="checkbox-group" style="margin-top:4px;">
+        <div class="check-pill" id="r-pill-voiture" onclick="r_toggle('voiture')">🚗 Voiture</div>
+        <div class="check-pill" id="r-pill-moto"    onclick="r_toggle('moto')">🏍 Moto</div>
+      </div>
+    </div>
+    <div class="info-box" style="margin-top:14px;">
+      Valeurs enregistrées : <strong style="color:var(--warn)">V</strong> Voiture → colonne B &nbsp;|&nbsp; <strong style="color:#60a5fa">M</strong> Moto → colonne C dans la feuille <em>Base région</em>.
+    </div>
+  </div>
+
+  <!-- Simulateur budget région -->
+  <div class="budget-wrap" id="r-budget">
+    <div class="card-title ct-purple" style="margin-bottom:16px;">💰 Simulation Budget EMAR – <span id="r-sim-name">-</span></div>
+    <table class="budget-table">
+      <thead><tr><th>Ligne budgétaire</th><th class="amount">Montant (Ar)</th></tr></thead>
+      <tbody id="r-budget-body"></tbody>
+      <tfoot><tr class="total-row"><td>TOTAL EMAR</td><td class="amount" id="r-budget-total">0</td></tr></tfoot>
+    </table>
+    <div class="info-box">ℹ Simulation basée sur les hypothèses du niveau national.</div>
+  </div>
+
+  <!-- Actions région -->
+  <div class="card">
+    <div class="card-title ct-purple">Actions</div>
+    <div class="btn-row">
+      <button class="btn btn-simulate" onclick="r_runSimulator()">📊 Simuler le budget EMAR</button>
+      <button class="btn btn-load"     onclick="r_loadData()">📂 Charger données existantes</button>
+      <button class="btn btn-purple"   onclick="r_submit()">💾 Enregistrer dans Google Sheet</button>
+      <button class="btn btn-secondary" onclick="r_reset()">🔄 Réinitialiser</button>
+    </div>
+  </div>
+
+</div><!-- /page-region -->
+
+<div id="toast"><span id="toast-msg">Message</span></div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  CONFIGURATION
+// ═══════════════════════════════════════════════════════
+const DEPLOY_ID = 'AKfycbxIIAHy_PXVVoGnuE63zmHxxtQaoNOpKsUdffRWfjCt28o3ibewho9B0atFn1ldnYPp';
+const GS_URL    = `https://script.google.com/macros/s/${DEPLOY_ID}/exec`;
+
+// ═══════════════════════════════════════════════════════
+//  DONNÉES
+// ═══════════════════════════════════════════════════════
+const REGIONS_DISTRICTS = {
+  "ALAOTRA MANGORO":["AMBATONDRAZAKA","AMPARAFARAVOLA","ANDILAMENA","ANOSIBE AN'ALA","MORAMANGA"],
+  "AMORON'I MANIA":["AMBATOFINANDRAHANA","AMBOSITRA","FANDRIANA","MANANDRIANA"],
+  "ANALAMANGA":["AMBOHIDRATRIMO","ANKAZOBE","ANDRAMASINA","ANTANANARIVO ATSIMONDRANO","ANJOZOROBE","ANTANANARIVO AVARADRANO","ANTANANARIVO RENIVOHITRA","MANJAKANDRIANA"],
+  "ANALANJIROFO":["FENERIVE EST","VAVATENINA","SAINTE MARIE","SOANIERANA IVONGO","MANANARA NORD","MAROANTSETRA"],
+  "ANDROY":["AMBOVOMBE","ANTANIMORA","BEKILY","BELOHA","TSIHOMBE"],
+  "ANOSY":["AMBOASARY SUD","BETROKA","TOLAGNARO"],
+  "ATSIMO ATSINANANA":["BEFOTAKA","MIDONGY DU SUD","FARAFANGANA","VANGAINDRANO","VONDROZO"],
+  "ATSIMO-ANDREFANA":["AMPANIHY ANDREFANA","BETIOKY-SUD","BENENITRA","SAKARAHA","ANKAZOABO","BEROROHA","MOROMBE","TOLIARA II","TOLIARA I"],
+  "ATSINANANA":["ANTANAMBAO MANAMPOTSY","MAHANORO","MAROLAMBO","TOAMASINA I","TOAMASINA II","BRICKAVILLE","VATOMANDRY"],
+  "BETSIBOKA":["KANDREHO","MAEVATANANA","TSARATANANA NORD","TSARATANANA SUD"],
+  "BOENI":["AMBATO-BOENI","MAROVOAY","MAHAJANGA I","MAHAJANGA II","MITSINJO","SOALALA"],
+  "BONGOLAVA":["FENOARIVOBE","TSIROANOMANDIDY"],
+  "DIANA":["AMBANJA","AMBILOBE","ANTSIRANANA I","ANTSIRANANA II","NOSY BE"],
+  "FITOVINANY":["IKONGO","MANAKARA","VOHIPENO"],
+  "HAUTE MATSIATRA":["AMBALAVAO","FII_VOHIBATO","AMBOHIMAHASOA","FIANARANTSOA I","FII_LALANGINA","FII_ISANDRA","IKALAMAVONY"],
+  "IHOROMBE":["IAKORA","IHOSY","IVOHIBE"],
+  "ITASY":["ARIVONIMAMO","MIARINARIVO","SOAVINANDRIANA"],
+  "MELAKY":["AMBATOMAINTY","MORAFENOBE","ANTSALOVA","MAINTIRANO","BESALAMPY"],
+  "MENABE":["BELO/TSIRIBIHINA","MORONDAVA","MANJA","MIANDRIVAZO","MAHABO"],
+  "S A V A":["ANDAPA","ANTALAHA","SAMBAVA","VOHEMAR"],
+  "SOFIA":["ANALALAVA","ANTSOHIHY","BEALALANA","MAMPIKONY","PORT-BERGER","MANDRITSARA","BEFANDRIANA NORD"],
+  "VAKINANKARATRA":["AMBATOLAMPY","ANTANIFOTSY","ANTSIRABE I","ANTSIRABE II","FARATSIHO","BETAFO","MANDOTO"],
+  "VATOVAVY":["IFANADIANA","MANANJARY","NOSY VARIKA"]
+};
+
+const DISTANCES = {"AMBATONDRAZAKA":0,"AMPARAFARAVOLA":150,"ANDILAMENA":390,"ANOSIBE AN'ALA":462,"MORAMANGA":320,"AMBATOFINANDRAHANA":156,"AMBOSITRA":0,"FANDRIANA":84,"MANANDRIANA":120,"AMBOHIDRATRIMO":36,"ANKAZOBE":192,"ANDRAMASINA":84,"ANTANANARIVO ATSIMONDRANO":30,"ANJOZOROBE":192,"ANTANANARIVO AVARADRANO":30,"ANTANANARIVO RENIVOHITRA":0,"MANJAKANDRIANA":90,"FENERIVE EST":0,"VAVATENINA":100,"SAINTE MARIE":0,"SOANIERANA IVONGO":120,"MANANARA NORD":380,"MAROANTSETRA":610,"AMBOVOMBE":0,"ANTANIMORA":160,"BEKILY":464,"BELOHA":250,"TSIHOMBE":140,"AMBOASARY SUD":150,"BETROKA":760,"TOLAGNARO":0,"BEFOTAKA":430,"MIDONGY DU SUD":350,"FARAFANGANA":0,"VANGAINDRANO":150,"VONDROZO":140,"AMPANIHY ANDREFANA":600,"BETIOKY-SUD":330,"BENENITRA":500,"SAKARAHA":270,"ANKAZOABO":520,"BEROROHA":710,"MOROMBE":570,"TOLIARA II":0,"TOLIARA I":0,"ANTANAMBAO MANAMPOTSY":610,"MAHANORO":580,"MAROLAMBO":840,"TOAMASINA I":0,"TOAMASINA II":0,"BRICKAVILLE":270,"VATOMANDRY":440,"KANDREHO":300,"MAEVATANANA":0,"TSARATANANA NORD":360,"TSARATANANA SUD":1388,"AMBATO-BOENI":310,"MAROVOAY":200,"MAHAJANGA I":0,"MAHAJANGA II":0,"MITSINJO":180,"SOALALA":360,"FENOARIVOBE":300,"TSIROANOMANDIDY":0,"AMBANJA":478,"AMBILOBE":270,"ANTSIRANANA I":0,"ANTSIRANANA II":0,"NOSY BE":598,"IKONGO":550,"MANAKARA":0,"VOHIPENO":90,"AMBALAVAO":106,"FII_VOHIBATO":50,"AMBOHIMAHASOA":130,"FIANARANTSOA I":0,"FII_LALANGINA":30,"FII_ISANDRA":60,"IKALAMAVONY":190,"IAKORA":280,"IHOSY":0,"IVOHIBE":220,"ARIVONIMAMO":90,"MIARINARIVO":0,"SOAVINANDRIANA":130,"AMBATOMAINTY":550,"MORAFENOBE":310,"ANTSALOVA":250,"MAINTIRANO":0,"BESALAMPY":420,"BELO/TSIRIBIHINA":310,"MORONDAVA":0,"MANJA":380,"MIANDRIVAZO":580,"MAHABO":110,"ANDAPA":240,"ANTALAHA":180,"SAMBAVA":0,"VOHEMAR":300,"ANALALAVA":180,"ANTSOHIHY":0,"BEALALANA":260,"MAMPIKONY":440,"PORT-BERGER":270,"MANDRITSARA":440,"BEFANDRIANA NORD":180,"AMBATOLAMPY":200,"ANTANIFOTSY":120,"ANTSIRABE I":0,"ANTSIRABE II":0,"FARATSIHO":164,"BETAFO":50,"MANDOTO":220,"IFANADIANA":240,"MANANJARY":0,"NOSY VARIKA":250};
+
+const HYP_D = { as_csb:2, jours_descente:5, jour_ac:1, indem_district:62000, indem_csb:62000, indem_ac:10000, nb_emad_voiture:3, nb_emad_moto:2, carburant_l_km:0.05, prix_essence:5100, dist_csb_fkt:20, dist_district_csb:80, prix_loc_moto:70000, nb_moto_district:2, carburant_veh_adm:0.15, prix_gasoil:4860 };
+const HYP_R = { nb_emar_voiture:3, nb_emar_moto:1, indem_region:100000, jours_emar:5, rayonnage_emar:50, prix_loc_moto_region:70000, nb_moto_region:1, carburant_veh_adm:0.15, prix_gasoil:4860, carburant_l_km:0.05, prix_essence:5100 };
+
+// ═══════════════════════════════════════════════════════
+//  ÉTAT
+// ═══════════════════════════════════════════════════════
+let d_riposte = null, d_voiture = false, d_moto = false;
+let r_voiture = false, r_moto = false;
+
+// ═══════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  // Remplir région district
+  const sd = document.getElementById('d-sel-region');
+  Object.keys(REGIONS_DISTRICTS).sort().forEach(r => {
+    sd.appendChild(new Option(r, r));
+  });
+  // Remplir région région
+  const sr = document.getElementById('r-sel-region');
+  Object.keys(REGIONS_DISTRICTS).sort().forEach(r => {
+    sr.appendChild(new Option(r, r));
+  });
+});
+
+// ═══════════════════════════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════════════════════════
+function showPage(page) {
+  document.getElementById('page-home').style.display     = page==='home'     ? 'block' : 'none';
+  document.getElementById('page-district').style.display = page==='district' ? 'block' : 'none';
+  document.getElementById('page-region').style.display   = page==='region'   ? 'block' : 'none';
+
+  const icons = { home:'🦠', district:'🏥', region:'🗺' };
+  const titles = { home:'Riposte Rougeole – Saisie des données', district:'Formulaire District – Riposte Rougeole', region:'Formulaire Région – Riposte Rougeole' };
+  const subs   = { home:'Sélectionnez votre niveau de saisie', district:'Collecte de données EMAD et CSB', region:'Saisie des données EMAR' };
+  const iconClasses = { home:'icon-home', district:'icon-district', region:'icon-region' };
+
+  document.getElementById('header-icon').textContent  = icons[page];
+  document.getElementById('header-icon').className    = 'header-icon ' + iconClasses[page];
+  document.getElementById('header-title').textContent = titles[page];
+  document.getElementById('header-sub').textContent   = subs[page];
+  window.scrollTo(0,0);
+}
+
+// ═══════════════════════════════════════════════════════
+//  DISTRICT – Cascades
+// ═══════════════════════════════════════════════════════
+function d_updateDistricts() {
+  const region = document.getElementById('d-sel-region').value;
+  const sd = document.getElementById('d-sel-district');
+  sd.innerHTML = '<option value="">— Sélectionner un district —</option>';
+  if (region && REGIONS_DISTRICTS[region]) {
+    REGIONS_DISTRICTS[region].forEach(d => sd.appendChild(new Option(d,d)));
+    sd.disabled = false;
+  } else {
+    sd.disabled = true;
+  }
+  d_clearFields(false);
+}
+
+function d_onDistrictChange() {
+  d_clearFields(false);
+}
+
+// ═══════════════════════════════════════════════════════
+//  DISTRICT – Riposte
+// ═══════════════════════════════════════════════════════
+function d_setRiposte(val) {
+  d_riposte = val;
+  document.getElementById('d-pill-oui').className = 'radio-pill yes' + (val==='Y'?' selected-yes':'');
+  document.getElementById('d-pill-non').className = 'radio-pill no'  + (val==='N'?' selected-no':'');
+  const f = document.getElementById('riposte-fields');
+  if (val==='Y') { f.classList.add('visible'); }
+  else { f.classList.remove('visible'); document.getElementById('d-budget').classList.remove('visible'); }
+}
+
+// ═══════════════════════════════════════════════════════
+//  DISTRICT – Déplacement
+// ═══════════════════════════════════════════════════════
+function d_toggle(type) {
+  if (type==='voiture') { d_voiture=!d_voiture; document.getElementById('d-pill-voiture').className='check-pill'+(d_voiture?' checked':''); }
+  else                  { d_moto=!d_moto;       document.getElementById('d-pill-moto').className='check-pill'+(d_moto?' checked':''); }
+  d_updateSimulator();
+}
+
+// ═══════════════════════════════════════════════════════
+//  DISTRICT – Simulateur
+// ═══════════════════════════════════════════════════════
+function d_runSimulator() {
+  if (!document.getElementById('d-sel-district').value) { showToast('Sélectionnez un district.','error'); return; }
+  if (d_riposte !== 'Y') { showToast('La riposte doit être "Oui".','error'); return; }
+  d_updateSimulator();
+  document.getElementById('d-budget').classList.add('visible');
+}
+
+function d_updateSimulator() {
+  const district = document.getElementById('d-sel-district').value;
+  if (!district || d_riposte!=='Y') return;
+  const H = HYP_D;
+  const nbCsb = +document.getElementById('d-nb-csb').value||0;
+  const nbFkt = +document.getElementById('d-nb-fkt').value||0;
+  const nbAc  = +document.getElementById('d-nb-ac').value||0;
+
+  const indem_csb   = nbCsb * H.as_csb * H.jours_descente * H.indem_csb;
+  const indem_ac    = nbAc  * H.jour_ac * H.indem_ac;
+  const carb_moto_c = nbCsb * H.carburant_l_km * H.dist_csb_fkt * H.jours_descente * H.prix_essence;
+  const sub_csb     = indem_csb + indem_ac + carb_moto_c;
+
+  const indem_emad   = (d_voiture?H.nb_emad_voiture:0)*H.jours_descente*H.indem_district
+                     + (d_moto?H.nb_emad_moto:0)*H.jours_descente*H.indem_district;
+  const carb_veh     = d_voiture ? H.carburant_veh_adm*H.dist_district_csb*H.jours_descente*H.prix_gasoil : 0;
+  const carb_moto_e  = d_moto    ? H.carburant_l_km*H.dist_district_csb*H.jours_descente*H.prix_essence : 0;
+  const loc_moto     = d_moto    ? H.prix_loc_moto*H.nb_moto_district*H.jours_descente : 0;
+  const sub_emad     = indem_emad + carb_veh + carb_moto_e + loc_moto;
+
+  const rows = [
+    ['Indemnités AS CSB', indem_csb, false],
+    ['Indemnités AC fokontany', indem_ac, false],
+    ['Carburant moto CSB → Fkt', carb_moto_c, false],
+    ['Sous-total CSB', sub_csb, true],
+    ['Indemnités EMAD district', indem_emad, false],
+    ['Carburant véhicule adm. EMAD', carb_veh, false],
+    ['Carburant moto EMAD', carb_moto_e, false],
+    ['Location moto district', loc_moto, false],
+    ['Sous-total EMAD', sub_emad, true],
+  ];
+
+  const tbody = document.getElementById('d-budget-body');
+  tbody.innerHTML = '';
+  rows.forEach(([label,val,isSub])=>{
+    const tr = document.createElement('tr');
+    if(isSub) tr.className='sub-row';
+    tr.innerHTML=`<td>${label}</td><td class="amount">${fmt(val)}</td>`;
+    tbody.appendChild(tr);
+  });
+  document.getElementById('d-budget-total').textContent = fmt(sub_csb+sub_emad);
+  document.getElementById('d-sim-name').textContent = district;
+}
+
+// ═══════════════════════════════════════════════════════
+//  DISTRICT – Validation & Soumission
+// ═══════════════════════════════════════════════════════
+function d_validate() {
+  let ok = true;
+  const region   = document.getElementById('d-sel-region').value;
+  const district = document.getElementById('d-sel-district').value;
+  setErr('d-grp-region',   !region);   if(!region)   ok=false;
+  setErr('d-grp-district', !district); if(!district) ok=false;
+  if (d_riposte===null) { showToast('Sélectionnez le statut de la riposte.','error'); ok=false; }
+  if (d_riposte==='Y') {
+    const nbFs  = +document.getElementById('d-nb-fs').value;
+    const nbCsb = +document.getElementById('d-nb-csb').value;
+    const nbFkt = +document.getElementById('d-nb-fkt').value;
+    const nbAc  = +document.getElementById('d-nb-ac').value;
+    const csbErr = isNaN(nbCsb)||nbCsb<0||(nbFs>0&&nbCsb>nbFs);
+    document.getElementById('d-err-csb').textContent = (nbCsb>nbFs) ? `Doit être ≤ ${nbFs} (total FS).` : 'Champ requis.';
+    setErr('d-grp-nb-csb', csbErr); if(csbErr) ok=false;
+    setErr('d-grp-nb-fkt', isNaN(nbFkt)||nbFkt<0); if(isNaN(nbFkt)||nbFkt<0) ok=false;
+    setErr('d-grp-nb-ac',  isNaN(nbAc)||nbAc<0);   if(isNaN(nbAc)||nbAc<0)   ok=false;
+    if(!d_voiture&&!d_moto){ showToast('Sélectionnez au moins un moyen de déplacement.','error'); ok=false; }
+  }
+  return ok;
+}
+
+function d_submit() {
+  if (!d_validate()) return;
+  const payload = {
+    action:   'updateDistrict',
+    region:   document.getElementById('d-sel-region').value,
+    district: document.getElementById('d-sel-district').value,
+    riposte:  d_riposte,
+    nb_csb:   d_riposte==='Y' ? document.getElementById('d-nb-csb').value : '',
+    nb_fkt:   d_riposte==='Y' ? document.getElementById('d-nb-fkt').value : '',
+    nb_ac:    d_riposte==='Y' ? document.getElementById('d-nb-ac').value  : '',
+    voiture:  d_voiture ? 'V' : '',
+    moto:     d_moto    ? 'M' : ''
+  };
+  sendToSheet(payload, () => {
+    localStorage.setItem('d_data_'+payload.district.replace(/\s/g,'_'), JSON.stringify(payload));
+    showToast('✓ Données district enregistrées !','success');
+    d_clearFields(false);
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+//  DISTRICT – Charger / Réinitialiser
+// ═══════════════════════════════════════════════════════
+
+async function d_loadData() {
+
+  const region = document.getElementById('d-sel-region').value;
+  const district = document.getElementById('d-sel-district').value;
+
+  if (!region || !district) {
+    showToast('Sélectionnez région et district.', 'error');
+    return;
+  }
+
+  try {
+
+    showToast('Chargement des données…','');
+
+    const url =
+      `${GS_URL}?action=getDistrict`
+      + `&region=${encodeURIComponent(region)}`
+      + `&district=${encodeURIComponent(district)}`;
+
+    const response = await fetch(url);
+
+    const data = await response.json();
+
+    if (data.status !== 'ok') {
+
+      showToast(data.message || 'Aucune donnée trouvée.', 'error');
+      return;
+    }
+
+    d_setRiposte(data.riposte);
+
+    document.getElementById('d-nb-csb').value = data.nb_csb || '';
+    document.getElementById('d-nb-fkt').value = data.nb_fkt || '';
+    document.getElementById('d-nb-ac').value  = data.nb_ac || '';
+
+    d_voiture = data.voiture === 'V';
+    d_moto    = data.moto === 'M';
+
+    document.getElementById('d-pill-voiture').className =
+      'check-pill' + (d_voiture ? ' checked' : '');
+
+    document.getElementById('d-pill-moto').className =
+      'check-pill' + (d_moto ? ' checked' : '');
+
+    d_updateSimulator();
+
+    showToast('Données chargées depuis Google Sheet', 'success');
+
+  } catch (err) {
+
+    console.error(err);
+
+    showToast('Erreur de lecture Google Sheet', 'error');
+  }
+}
+
+
+function d_clearFields(resetSelects) {
+  ['d-nb-fs','d-nb-csb','d-nb-fkt','d-nb-ac'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  d_riposte=null; d_voiture=false; d_moto=false;
+  document.getElementById('d-pill-oui').className='radio-pill yes';
+  document.getElementById('d-pill-non').className='radio-pill no';
+  document.getElementById('d-pill-voiture').className='check-pill';
+  document.getElementById('d-pill-moto').className='check-pill';
+  document.getElementById('riposte-fields').classList.remove('visible');
+  document.getElementById('d-budget').classList.remove('visible');
+  ['d-grp-region','d-grp-district','d-grp-nb-csb','d-grp-nb-fkt','d-grp-nb-ac'].forEach(id=>setErr(id,false));
+  if (resetSelects) {
+    document.getElementById('d-sel-region').value='';
+    const sd=document.getElementById('d-sel-district');
+    sd.innerHTML='<option value="">— Sélectionner un district —</option>';
+    sd.disabled=true;
+  }
+}
+function d_reset() { d_clearFields(true); }
+
+// ═══════════════════════════════════════════════════════
+//  RÉGION – Déplacement
+// ═══════════════════════════════════════════════════════
+function r_toggle(type) {
+  if (type==='voiture') { r_voiture=!r_voiture; document.getElementById('r-pill-voiture').className='check-pill'+(r_voiture?' checked':''); }
+  else                  { r_moto=!r_moto;       document.getElementById('r-pill-moto').className='check-pill'+(r_moto?' checked':''); }
+}
+
+// ═══════════════════════════════════════════════════════
+//  RÉGION – Simulateur
+// ═══════════════════════════════════════════════════════
+function r_runSimulator() {
+  const region = document.getElementById('r-sel-region').value;
+  if (!region) { showToast('Sélectionnez une région d\'abord.','error'); return; }
+  if (!r_voiture&&!r_moto) { showToast('Sélectionnez au moins un moyen de déplacement.','error'); return; }
+  const H = HYP_R;
+  const indem_emar = ((r_voiture?H.nb_emar_voiture:0)+(r_moto?H.nb_emar_moto:0))*H.jours_emar*H.indem_region;
+  const carb_veh   = r_voiture ? H.carburant_veh_adm*H.rayonnage_emar*H.jours_emar*H.prix_gasoil : 0;
+  const carb_moto  = r_moto    ? H.carburant_l_km*H.rayonnage_emar*H.jours_emar*H.prix_essence : 0;
+  const loc_moto   = r_moto    ? H.prix_loc_moto_region*H.nb_moto_region*H.jours_emar : 0;
+  const total = indem_emar+carb_veh+carb_moto+loc_moto;
+  const rows = [['Indemnités EMAR',indem_emar],['Carburant véhicule adm.',carb_veh],['Carburant moto DRSP',carb_moto],['Location moto région',loc_moto]];
+  const tbody = document.getElementById('r-budget-body');
+  tbody.innerHTML='';
+  rows.forEach(([label,val])=>{ const tr=document.createElement('tr'); tr.innerHTML=`<td>${label}</td><td class="amount">${fmt(val)}</td>`; tbody.appendChild(tr); });
+  document.getElementById('r-budget-total').textContent=fmt(total);
+  document.getElementById('r-sim-name').textContent=region;
+  document.getElementById('r-budget').classList.add('visible');
+}
+
+// ═══════════════════════════════════════════════════════
+//  RÉGION – Validation & Soumission
+// ═══════════════════════════════════════════════════════
+function r_validate() {
+  const region = document.getElementById('r-sel-region').value;
+  setErr('r-grp-region',!region);
+  if (!region) { return false; }
+  if (!r_voiture&&!r_moto) { showToast('Sélectionnez au moins un moyen de déplacement.','error'); return false; }
+  return true;
+}
+
+function r_submit() {
+  if (!r_validate()) return;
+  const payload = {
+    action:  'updateRegion',
+    region:  document.getElementById('r-sel-region').value,
+    voiture: r_voiture ? 'V' : '',
+    moto:    r_moto    ? 'M' : ''
+  };
+  sendToSheet(payload, () => {
+    localStorage.setItem('r_data_'+payload.region.replace(/\s/g,'_'), JSON.stringify(payload));
+    showToast('✓ Données région enregistrées !','success');
+    r_clearFields(false);
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+//  RÉGION – Charger / Réinitialiser
+// ═══════════════════════════════════════════════════════
+async function r_loadData() {
+
+  const region = document.getElementById('r-sel-region').value;
+
+  if (!region) {
+    showToast('Sélectionnez une région.', 'error');
+    return;
+  }
+
+  try {
+
+    const url =
+      `${GS_URL}?action=getRegion`
+      + `&region=${encodeURIComponent(region)}`;
+
+    const response = await fetch(url);
+
+    const data = await response.json();
+
+    if (data.status !== 'ok') {
+      showToast(data.message || 'Aucune donnée trouvée.', 'error');
+      return;
+    }
+
+    r_voiture = data.voiture === 'V';
+    r_moto    = data.moto === 'M';
+
+    document.getElementById('r-pill-voiture').className =
+      'check-pill' + (r_voiture ? ' checked' : '');
+
+    document.getElementById('r-pill-moto').className =
+      'check-pill' + (r_moto ? ' checked' : '');
+
+    showToast('Données chargées depuis Google Sheet', 'success');
+
+  } catch (err) {
+
+    console.error(err);
+
+    showToast('Erreur de lecture Google Sheet', 'error');
+  }
+}
+
+function r_clearFields(resetSelect) {
+  r_voiture=false; r_moto=false;
+  document.getElementById('r-pill-voiture').className='check-pill';
+  document.getElementById('r-pill-moto').className='check-pill';
+  document.getElementById('r-budget').classList.remove('visible');
+  setErr('r-grp-region',false);
+  if (resetSelect) document.getElementById('r-sel-region').value='';
+}
+function r_reset() { r_clearFields(true); }
+
+// ═══════════════════════════════════════════════════════
+//  ENVOI GOOGLE SHEET (via fetch no-cors)
+//  Fallback iframe si fetch bloqué
+// ═══════════════════════════════════════════════════════
+async function sendToSheet(payload, onSuccess) {
+
+  showToast('Envoi en cours…','');
+
+  try {
+
+    const response = await fetch(GS_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/plain;charset=utf-8'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const result = await response.json();
+
+    if (result.status === 'ok') {
+
+      showToast(result.message, 'success');
+
+      if (onSuccess) onSuccess();
+
+    } else {
+
+      showToast(result.message || 'Erreur Apps Script', 'error');
+
+      console.error(result);
+    }
+
+  } catch (err) {
+
+    console.error(err);
+
+    showToast('Erreur de connexion avec Google Sheet', 'error');
+  }
+}
+// ═══════════════════════════════════════════════════════
+//  UTILITAIRES
+// ═══════════════════════════════════════════════════════
+function fmt(n) { return Math.round(n).toLocaleString('fr-FR')+' Ar'; }
+
+function setErr(groupId, hasError) {
+  const g = document.getElementById(groupId);
+  if (g) g.classList.toggle('has-error', hasError);
+}
+
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-msg').textContent = msg;
+  t.className = type ? `show ${type}` : 'show';
+  setTimeout(()=>{ t.className = type||''; }, 3500);
+}
+</script>
+</body>
+</html>
