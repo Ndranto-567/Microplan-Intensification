@@ -1127,7 +1127,7 @@ function d_addActeurRow(data) {
     <td><input type="text" class="a-nom"   placeholder="Nom et prénom" value="${data?.nom||''}" oninput="d_updateActeursCount()"></td>
     <td><input type="text" class="a-poste" placeholder="Poste / Fonction" value="${data?.poste||''}"></td>
     <td><input type="text" class="a-cin"   placeholder="N° CIN" value="${data?.cin||''}"></td>
-    <td><input type="text" class="a-mvola warn" placeholder="034 XX XXX XX" value="${data?.mvola||''}"></td>
+    <td><input type="text" class="a-mvola warn" placeholder="03X XX XXX XX" value="${data?.mvola||''}"></td>
     <td><button class="btn-del-row" onclick="d_delActeurRow('${id}')">✕</button></td>
   `;
   tbody.appendChild(tr);
@@ -1206,12 +1206,13 @@ function r_addActeurRow(data) {
   const id = 'r-acteur-' + r_acteurRows;
   const tr = document.createElement('tr');
   tr.id = id;
+
   tr.innerHTML = `
-    <td><input type="text" class="a-nom"   placeholder="Nom et prénom" value="${data?.nom||''}" oninput="r_updateActeursCount()"></td>
-    <td><input type="text" class="a-poste" placeholder="Poste / Fonction" value="${data?.poste||''}"></td>
-    <td><input type="text" class="a-cin"   placeholder="N° CIN" value="${data?.cin||''}"></td>
-    <td><input type="text" class="a-mvola warn" placeholder="034 XX XXX XX" value="${data?.mvola||''}"></td>
-    <td><button class="btn-del-row" onclick="r_delActeurRow('${id}')">✕</button></td>
+  <td><input type="text" class="a-nom"   placeholder="Nom et prénom" value="${data?.nom||''}" oninput="r_updateActeursCount()"></td>
+  <td><input type="text" class="a-poste" placeholder="Poste / Fonction" value="${data?.poste||''}"></td>
+  <td><input type="text" class="a-cin"   placeholder="XXX XXX XXX XXX" maxlength="15" value="${data?.cin||''}" oninput="formatCIN(this)"></td>
+  <td><input type="text" class="a-mvola warn" placeholder="03X XX XXX XX" maxlength="10" value="${data?.mvola||''}" oninput="formatMobileMoney(this)"></td>
+  <td><button class="btn-del-row" onclick="r_delActeurRow('${id}')">✕</button></td>
   `;
   tbody.appendChild(tr);
   r_updateActeursCount();
