@@ -1223,11 +1223,13 @@ function r_addActeurRow(data) {
   tr.innerHTML = `
   <td><input type="text" class="a-nom"   placeholder="Nom et prénom" value="${data?.nom||''}" oninput="r_updateActeursCount()"></td>
   <td><input type="text" class="a-poste" placeholder="Poste / Fonction" value="${data?.poste||''}"></td>
-  <td><input type="text" class="a-cin" placeholder="XXX XXX XXX XXX" maxlength="15" onkeydown="onlyDigits(event)" oninput="formatCIN(this)" inputmode="numeric" autocomplete="off"></td>
-  <td><input type="text" class="a-mvola warn" placeholder="03X XX XXX XX" maxlength="13" onkeydown="onlyDigits(event)" oninput="formatMobileMoney(this)" inputmode="numeric" autocomplete="off"></td>
+  <td><input type="text" class="a-cin" placeholder="XXX XXX XXX XXX" value="${data?.cin||''}" maxlength="15" onkeydown="onlyDigits(event)" oninput="formatCIN(this)" inputmode="numeric" autocomplete="off"></td>
+  <td><input type="text" class="a-mvola warn" placeholder="03X XX XXX XX" value="${data?.mvola||''}" maxlength="13" onkeydown="onlyDigits(event)" oninput="formatMobileMoney(this)" inputmode="numeric" autocomplete="off"></td>
   <td><button class="btn-del-row" onclick="r_delActeurRow('${id}')">✕</button></td>
   `;
   tbody.appendChild(tr);
+  if (data?.cin)   formatCIN(tr.querySelector('.a-cin'));
+  if (data?.mvola) formatMobileMoney(tr.querySelector('.a-mvola'));
   r_updateActeursCount();
   tr.querySelector('.a-nom').focus();
 }
