@@ -163,6 +163,62 @@
 
   /* hidden iframe for CORS-free POST */
   #gs-iframe { display:none; }
+
+  /* ── ACTEURS TABLE ── */
+  .acteurs-table-wrap { overflow-x:auto; margin-top:14px; }
+  .acteurs-table {
+    width:100%; border-collapse:collapse; font-size:0.82rem;
+    min-width:520px;
+  }
+  .acteurs-table th {
+    background:#1a2744; color:var(--label); font-weight:600;
+    text-align:left; padding:8px 10px; font-size:0.73rem;
+    text-transform:uppercase; letter-spacing:0.05em; white-space:nowrap;
+  }
+  .acteurs-table td { padding:5px 6px; border-bottom:1px solid var(--border); vertical-align:middle; }
+  .acteurs-table tr:last-child td { border-bottom:none; }
+  .acteurs-table input[type="text"] {
+    background:var(--surface2); border:1px solid var(--border);
+    border-radius:6px; color:var(--text); font-family:inherit;
+    font-size:0.82rem; padding:6px 9px; width:100%;
+    transition:border-color 0.2s;
+  }
+  .acteurs-table input[type="text"]:focus {
+    outline:none; border-color:var(--accent);
+    box-shadow:0 0 0 2px rgba(59,130,246,0.15);
+  }
+  .acteurs-table input.warn:focus { border-color:var(--warn); box-shadow:0 0 0 2px rgba(245,158,11,0.15); }
+
+  /* Delete row button */
+  .btn-del-row {
+    background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.25);
+    color:var(--danger); border-radius:6px; padding:4px 9px;
+    cursor:pointer; font-size:0.8rem; transition:all 0.2s; white-space:nowrap;
+  }
+  .btn-del-row:hover { background:rgba(239,68,68,0.25); }
+
+  /* Add row button */
+  .btn-add-row {
+    display:inline-flex; align-items:center; gap:7px;
+    background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.3);
+    color:var(--accent2); border-radius:8px; padding:8px 16px;
+    cursor:pointer; font-family:inherit; font-size:0.85rem; font-weight:600;
+    margin-top:12px; transition:all 0.2s;
+  }
+  .btn-add-row:hover { background:rgba(16,185,129,0.2); transform:translateY(-1px); }
+  .btn-add-row.purple {
+    background:rgba(139,92,246,0.1); border-color:rgba(139,92,246,0.3);
+    color:var(--purple);
+  }
+  .btn-add-row.purple:hover { background:rgba(139,92,246,0.2); }
+
+  .acteurs-empty {
+    text-align:center; color:var(--muted); font-size:0.82rem;
+    padding:18px; font-style:italic;
+  }
+  .acteurs-count {
+    font-size:0.75rem; color:var(--muted); margin-left:8px; font-weight:400;
+  }
 </style>
 </head>
 <body>
@@ -290,6 +346,36 @@
     </table>
   </div>
 
+  <!-- Acteurs District -->
+  <div class="card">
+    <div class="card-title ct-blue">
+      👥 Acteurs impliqués – District
+      <span class="acteurs-count" id="d-acteurs-count">(0 acteur)</span>
+    </div>
+    <p style="font-size:0.8rem;color:var(--label);margin-bottom:4px;">
+      Renseignez les personnes impliquées dans la riposte au niveau du district.
+    </p>
+    <div class="acteurs-table-wrap">
+      <table class="acteurs-table" id="d-acteurs-table">
+        <thead>
+          <tr>
+            <th style="width:28%">Nom et Prénom</th>
+            <th style="width:22%">Poste</th>
+            <th style="width:20%">CIN</th>
+            <th style="width:20%">Num M'vola</th>
+            <th style="width:10%"></th>
+          </tr>
+        </thead>
+        <tbody id="d-acteurs-tbody">
+          <tr id="d-acteurs-empty"><td colspan="5" class="acteurs-empty">Aucun acteur ajouté. Cliquez sur « + Ajouter » pour commencer.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <button class="btn-add-row" onclick="d_addActeurRow()">
+      <span style="font-size:1.1rem;line-height:1">＋</span> Ajouter un acteur
+    </button>
+  </div>
+
   <!-- Actions district -->
   <div class="card">
     <div class="card-title ct-blue">Actions</div>
@@ -371,6 +457,36 @@
       <tbody id="r-budget-body"></tbody>
       <tfoot><tr class="total-row"><td>TOTAL EMAR</td><td class="amount" id="r-budget-total">0</td></tr></tfoot>
     </table>
+  </div>
+
+  <!-- Acteurs Région -->
+  <div class="card">
+    <div class="card-title ct-purple">
+      👥 Acteurs impliqués – Région
+      <span class="acteurs-count" id="r-acteurs-count">(0 acteur)</span>
+    </div>
+    <p style="font-size:0.8rem;color:var(--label);margin-bottom:4px;">
+      Renseignez les personnes impliquées dans la riposte au niveau régional.
+    </p>
+    <div class="acteurs-table-wrap">
+      <table class="acteurs-table" id="r-acteurs-table">
+        <thead>
+          <tr>
+            <th style="width:28%">Nom et Prénom</th>
+            <th style="width:22%">Poste</th>
+            <th style="width:20%">CIN</th>
+            <th style="width:20%">Num M'vola</th>
+            <th style="width:10%"></th>
+          </tr>
+        </thead>
+        <tbody id="r-acteurs-tbody">
+          <tr id="r-acteurs-empty"><td colspan="5" class="acteurs-empty">Aucun acteur ajouté. Cliquez sur « + Ajouter » pour commencer.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <button class="btn-add-row purple" onclick="r_addActeurRow()">
+      <span style="font-size:1.1rem;line-height:1">＋</span> Ajouter un acteur
+    </button>
   </div>
 
   <!-- Actions région -->
@@ -589,12 +705,18 @@ function d_validate() {
   return ok;
 }
 
-function d_submit() {
+async function d_submit() {
   if (!d_validate()) return;
+  const region   = document.getElementById('d-sel-region').value;
+  const district = document.getElementById('d-sel-district').value;
+
+  // ── Collecter les acteurs MAINTENANT, avant tout clear ──
+  const acteurs = d_getActeurs();
+
   const payload = {
     action:   'updateDistrict',
-    region:   document.getElementById('d-sel-region').value,
-    district: document.getElementById('d-sel-district').value,
+    region,
+    district,
     riposte:  d_riposte,
     nb_csb:   d_riposte==='Y' ? document.getElementById('d-nb-csb').value : '',
     nb_fkt:   d_riposte==='Y' ? document.getElementById('d-nb-fkt').value : '',
@@ -602,10 +724,44 @@ function d_submit() {
     voiture:  d_voiture ? 'V' : '',
     moto:     d_moto    ? 'M' : ''
   };
-  sendToSheet(payload, () => {
-    showToast('✓ Données district enregistrées !','success');
+
+  showToast('Envoi en cours…','');
+  try {
+    // 1. Enregistrer les données district
+    const res1 = await fetch(GS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    });
+    const result1 = await res1.json();
+    if (result1.status !== 'ok') {
+      showToast(result1.message || 'Erreur Apps Script', 'error');
+      return;
+    }
+
+    // 2. Enregistrer les acteurs (avec les données déjà collectées)
+    if (acteurs.length > 0) {
+      const payloadA = { action: 'saveActeursDistrict', region, district, acteurs };
+      const res2 = await fetch(GS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payloadA)
+      });
+      const result2 = await res2.json();
+      if (result2.status !== 'ok') {
+        showToast('District OK. Acteurs : ' + (result2.message || 'Erreur'), 'error');
+        return;
+      }
+    }
+
+    showToast('✓ Données district & acteurs enregistrés !', 'success');
     d_clearFields(false);
-  });
+    d_clearActeurs();
+
+  } catch (err) {
+    console.error(err);
+    showToast('Erreur de connexion avec Google Sheet', 'error');
+  }
 }
 
 // ═══════════════════════════════════════════════════════
@@ -630,6 +786,16 @@ async function d_loadData() {
     document.getElementById('d-pill-voiture').className = 'check-pill' + (d_voiture ? ' checked' : '');
     document.getElementById('d-pill-moto').className    = 'check-pill' + (d_moto    ? ' checked' : '');
     d_updateSimulator();
+
+    // Charger les acteurs district
+    d_clearActeurs();
+    const urlA = `${GS_URL}?action=getActeursDistrict&region=${encodeURIComponent(region)}&district=${encodeURIComponent(district)}`;
+    const resA = await fetch(urlA);
+    const dataA = await resA.json();
+    if (dataA.status === 'ok' && dataA.acteurs) {
+      dataA.acteurs.forEach(a => d_addActeurRow(a));
+    }
+
     showToast('Données chargées depuis Google Sheet', 'success');
   } catch (err) {
     console.error(err);
@@ -654,7 +820,7 @@ function d_clearFields(resetSelects) {
     sd.disabled=true;
   }
 }
-function d_reset() { d_clearFields(true); }
+function d_reset() { d_clearFields(true); d_clearActeurs(); }
 
 // ═══════════════════════════════════════════════════════
 //  RÉGION – Cascade région → listes districts
@@ -753,20 +919,59 @@ function r_validate() {
   return ok;
 }
 
-function r_submit() {
+async function r_submit() {
   if (!r_validate()) return;
+  const region = document.getElementById('r-sel-region').value;
+
+  // ── Collecter les acteurs MAINTENANT, avant tout clear ──
+  const acteurs = r_getActeurs();
+
   const payload = {
     action:           'updateRegion',
-    region:           document.getElementById('r-sel-region').value,
+    region,
     voiture:          r_voiture ? 'V' : '',
     district_voiture: r_voiture ? document.getElementById('r-sel-district-voiture').value : '',
     moto:             r_moto    ? 'M' : '',
     district_moto:    r_moto    ? document.getElementById('r-sel-district-moto').value    : ''
   };
-  sendToSheet(payload, () => {
-    showToast('✓ Données région enregistrées !','success');
+
+  showToast('Envoi en cours…','');
+  try {
+    // 1. Enregistrer les données région
+    const res1 = await fetch(GS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    });
+    const result1 = await res1.json();
+    if (result1.status !== 'ok') {
+      showToast(result1.message || 'Erreur Apps Script', 'error');
+      return;
+    }
+
+    // 2. Enregistrer les acteurs (avec les données déjà collectées)
+    if (acteurs.length > 0) {
+      const payloadA = { action: 'saveActeursRegion', region, acteurs };
+      const res2 = await fetch(GS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payloadA)
+      });
+      const result2 = await res2.json();
+      if (result2.status !== 'ok') {
+        showToast('Région OK. Acteurs : ' + (result2.message || 'Erreur'), 'error');
+        return;
+      }
+    }
+
+    showToast('✓ Données région & acteurs enregistrés !', 'success');
     r_clearFields(false);
-  });
+    r_clearActeurs();
+
+  } catch (err) {
+    console.error(err);
+    showToast('Erreur de connexion avec Google Sheet', 'error');
+  }
 }
 
 // ═══════════════════════════════════════════════════════
@@ -782,12 +987,8 @@ async function r_loadData() {
     const data = await response.json();
     if (data.status !== 'ok') { showToast(data.message || 'Aucune donnée trouvée.', 'error'); return; }
 
-    // data.rows = [{ district, voiture, moto }, ...]
     const rows = data.rows || [];
-
-    // Chercher une ligne avec voiture = 'V'
     const rowV = rows.find(r => r.voiture === 'V');
-    // Chercher une ligne avec moto = 'M'
     const rowM = rows.find(r => r.moto === 'M');
 
     r_voiture = !!rowV;
@@ -796,19 +997,16 @@ async function r_loadData() {
     document.getElementById('r-pill-voiture').className = 'check-pill' + (r_voiture ? ' checked' : '');
     document.getElementById('r-pill-moto').className    = 'check-pill' + (r_moto    ? ' checked' : '');
 
-    // Afficher / pré-remplir dropdown voiture
     document.getElementById('r-voiture-district-wrap').style.display = r_voiture ? 'block' : 'none';
     if (r_voiture && rowV.district) {
       const selV = document.getElementById('r-sel-district-voiture');
       selV.disabled = false;
-      // Peupler si vide
       if (selV.options.length <= 1) {
         REGIONS_DISTRICTS[region]?.forEach(d => selV.appendChild(new Option(d, d)));
       }
       selV.value = rowV.district;
     }
 
-    // Afficher / pré-remplir dropdown moto
     document.getElementById('r-moto-district-wrap').style.display = r_moto ? 'block' : 'none';
     if (r_moto && rowM.district) {
       const selM = document.getElementById('r-sel-district-moto');
@@ -817,6 +1015,15 @@ async function r_loadData() {
         REGIONS_DISTRICTS[region]?.forEach(d => selM.appendChild(new Option(d, d)));
       }
       selM.value = rowM.district;
+    }
+
+    // Charger les acteurs région
+    r_clearActeurs();
+    const urlA = `${GS_URL}?action=getActeursRegion&region=${encodeURIComponent(region)}`;
+    const resA = await fetch(urlA);
+    const dataA = await resA.json();
+    if (dataA.status === 'ok' && dataA.acteurs) {
+      dataA.acteurs.forEach(a => r_addActeurRow(a));
     }
 
     showToast('Données chargées depuis Google Sheet', 'success');
@@ -845,7 +1052,7 @@ function r_clearFields(resetSelect) {
     });
   }
 }
-function r_reset() { r_clearFields(true); }
+function r_reset() { r_clearFields(true); r_clearActeurs(); }
 
 // ═══════════════════════════════════════════════════════
 //  ENVOI GOOGLE SHEET
@@ -888,6 +1095,157 @@ function showToast(msg, type) {
   t.className = type ? `show ${type}` : 'show';
   setTimeout(()=>{ t.className = type||''; }, 3500);
 }
+// ═══════════════════════════════════════════════════════
+//  ACTEURS – DISTRICT
+// ═══════════════════════════════════════════════════════
+let d_acteurRows = 0;
+
+function d_addActeurRow(data) {
+  const tbody = document.getElementById('d-acteurs-tbody');
+  const empty = document.getElementById('d-acteurs-empty');
+  if (empty) empty.remove();
+
+  d_acteurRows++;
+  const id = 'd-acteur-' + d_acteurRows;
+  const tr = document.createElement('tr');
+  tr.id = id;
+  tr.innerHTML = `
+    <td><input type="text" class="a-nom"   placeholder="Nom et prénom" value="${data?.nom||''}" oninput="d_updateActeursCount()"></td>
+    <td><input type="text" class="a-poste" placeholder="Poste / Fonction" value="${data?.poste||''}"></td>
+    <td><input type="text" class="a-cin"   placeholder="N° CIN" value="${data?.cin||''}"></td>
+    <td><input type="text" class="a-mvola warn" placeholder="034 XX XXX XX" value="${data?.mvola||''}"></td>
+    <td><button class="btn-del-row" onclick="d_delActeurRow('${id}')">✕</button></td>
+  `;
+  tbody.appendChild(tr);
+  d_updateActeursCount();
+  // Focus sur le premier champ
+  tr.querySelector('.a-nom').focus();
+}
+
+function d_delActeurRow(id) {
+  const tr = document.getElementById(id);
+  if (tr) tr.remove();
+  d_updateActeursCount();
+  // Remettre l'empty si vide
+  if (document.getElementById('d-acteurs-tbody').children.length === 0) {
+    d_showActeursEmpty('d');
+  }
+}
+
+function d_getActeurs() {
+  const rows = document.querySelectorAll('#d-acteurs-tbody tr:not(#d-acteurs-empty)');
+  return Array.from(rows).map(tr => ({
+    nom:   tr.querySelector('.a-nom')?.value.trim()   || '',
+    poste: tr.querySelector('.a-poste')?.value.trim() || '',
+    cin:   tr.querySelector('.a-cin')?.value.trim()   || '',
+    mvola: tr.querySelector('.a-mvola')?.value.trim() || ''
+  })).filter(a => a.nom || a.poste || a.cin || a.mvola);
+}
+
+function d_updateActeursCount() {
+  const n = document.querySelectorAll('#d-acteurs-tbody tr:not(#d-acteurs-empty)').length;
+  document.getElementById('d-acteurs-count').textContent = '(' + n + ' acteur' + (n>1?'s':'') + ')';
+}
+
+function d_clearActeurs() {
+  const tbody = document.getElementById('d-acteurs-tbody');
+  tbody.innerHTML = '';
+  d_acteurRows = 0;
+  d_showActeursEmpty('d');
+  d_updateActeursCount();
+}
+
+function d_showActeursEmpty(prefix) {
+  const tbody = document.getElementById(prefix + '-acteurs-tbody');
+  if (!document.getElementById(prefix + '-acteurs-empty')) {
+    const tr = document.createElement('tr');
+    tr.id = prefix + '-acteurs-empty';
+    tr.innerHTML = '<td colspan="5" class="acteurs-empty">Aucun acteur ajouté. Cliquez sur « + Ajouter » pour commencer.</td>';
+    tbody.appendChild(tr);
+  }
+}
+
+// ─── Soumission acteurs district (séparée ou groupée) ───
+async function d_submitActeurs(region, district) {
+  const acteurs = d_getActeurs();
+  if (acteurs.length === 0) return { status: 'ok', message: 'Aucun acteur à enregistrer.' };
+  const payload = { action: 'saveActeursDistrict', region, district, acteurs };
+  const response = await fetch(GS_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(payload)
+  });
+  return await response.json();
+}
+
+// ═══════════════════════════════════════════════════════
+//  ACTEURS – RÉGION
+// ═══════════════════════════════════════════════════════
+let r_acteurRows = 0;
+
+function r_addActeurRow(data) {
+  const tbody = document.getElementById('r-acteurs-tbody');
+  const empty = document.getElementById('r-acteurs-empty');
+  if (empty) empty.remove();
+
+  r_acteurRows++;
+  const id = 'r-acteur-' + r_acteurRows;
+  const tr = document.createElement('tr');
+  tr.id = id;
+  tr.innerHTML = `
+    <td><input type="text" class="a-nom"   placeholder="Nom et prénom" value="${data?.nom||''}" oninput="r_updateActeursCount()"></td>
+    <td><input type="text" class="a-poste" placeholder="Poste / Fonction" value="${data?.poste||''}"></td>
+    <td><input type="text" class="a-cin"   placeholder="N° CIN" value="${data?.cin||''}"></td>
+    <td><input type="text" class="a-mvola warn" placeholder="034 XX XXX XX" value="${data?.mvola||''}"></td>
+    <td><button class="btn-del-row" onclick="r_delActeurRow('${id}')">✕</button></td>
+  `;
+  tbody.appendChild(tr);
+  r_updateActeursCount();
+  tr.querySelector('.a-nom').focus();
+}
+
+function r_delActeurRow(id) {
+  const tr = document.getElementById(id);
+  if (tr) tr.remove();
+  r_updateActeursCount();
+  if (document.getElementById('r-acteurs-tbody').children.length === 0) {
+    d_showActeursEmpty('r');
+  }
+}
+
+function r_getActeurs() {
+  const rows = document.querySelectorAll('#r-acteurs-tbody tr:not(#r-acteurs-empty)');
+  return Array.from(rows).map(tr => ({
+    nom:   tr.querySelector('.a-nom')?.value.trim()   || '',
+    poste: tr.querySelector('.a-poste')?.value.trim() || '',
+    cin:   tr.querySelector('.a-cin')?.value.trim()   || '',
+    mvola: tr.querySelector('.a-mvola')?.value.trim() || ''
+  })).filter(a => a.nom || a.poste || a.cin || a.mvola);
+}
+
+function r_updateActeursCount() {
+  const n = document.querySelectorAll('#r-acteurs-tbody tr:not(#r-acteurs-empty)').length;
+  document.getElementById('r-acteurs-count').textContent = '(' + n + ' acteur' + (n>1?'s':'') + ')';
+}
+
+function r_clearActeurs() {
+  const tbody = document.getElementById('r-acteurs-tbody');
+  tbody.innerHTML = '';
+  r_acteurRows = 0;
+  d_showActeursEmpty('r');
+  r_updateActeursCount();
+}
+
+// ─── Soumission acteurs région ───
+async function r_submitActeurs(region) {
+  const acteurs = r_getActeurs();
+  if (acteurs.length === 0) return { status: 'ok', message: 'Aucun acteur à enregistrer.' };
+  const payload = { action: 'saveActeursRegion', region, acteurs };
+  const response = await fetch(GS_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(payload)
+  });
+  return await response.json();
+}
 </script>
-</body>
-</html>
