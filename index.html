@@ -745,7 +745,10 @@ async function d_submit() {
       showToast(result1.message || 'Erreur Apps Script', 'error');
       return;
     }
-
+    // Dans d_submit, avant l'envoi :
+console.log('Acteurs à envoyer:', acteurs);
+console.log('Payload acteurs:', payloadA);
+    
     // 2. Enregistrer les acteurs (avec les données déjà collectées)
     
       const payloadA = { action: 'saveActeursDistrict', region, district, acteurs };
