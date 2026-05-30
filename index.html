@@ -440,19 +440,15 @@
       <!-- Layout deux colonnes : voiture | moto -->
       <div class="transport-row" style="margin-top:4px;">
 
+       
+
         <!-- Colonne Voiture -->
         <div class="transport-col" id="r-col-voiture">
-           <div class="checkbox-group" style="margin-top:4px;">
-              <div class="check-pill"
-                   id="d-pill-voiture"
-                   title="Vous pouvez choisir voiture et moto à la fois"
-                   onclick="d_toggle('voiture')">
-                🚗 Voiture
-              </div>
-          <div class="district-dropdown-wrap" id="r-voiture-district-wrap" style="display:none;">
-            <div class="form-group" id="r-grp-district-voiture" style="margin-top:0;">
-              <label class="flabel" style="margin-top:8px;">District (Voiture) <span class="req">*</span></label>
-              <select id="r-sel-district-voiture" disabled>
+          <div class="check-pill" id="r-pill-voiture" title="Vous pouvez choisir voiture et moto à la fois" onclick="r_toggle('voiture')">🚗 Voiture</div>
+             <div class="district-dropdown-wrap" id="r-voiture-district-wrap" style="display:none;">
+              <div class="form-group" id="r-grp-district-voiture" style="margin-top:0;">
+                <label class="flabel" style="margin-top:8px;">District (Voiture) <span class="req">*</span></label>
+                <select id="r-sel-district-voiture" disabled>
                 <option value="">— Sélectionner un district —</option>
               </select>
               <span class="field-error">Veuillez sélectionner un district.</span>
@@ -462,12 +458,7 @@
 
         <!-- Colonne Moto -->
         <div class="transport-col" id="r-col-moto">
-          <div class="check-pill"
-                   id="d-pill-moto"
-                   title="Vous pouvez choisir voiture et moto à la fois"
-                   onclick="d_toggle('moto')">
-                🏍 Moto
-              </div>
+          <div class="check-pill" id="r-pill-moto" title="Vous pouvez choisir voiture et moto à la fois" onclick="r_toggle('moto')">🏍 Moto</div>
           <div class="district-dropdown-wrap" id="r-moto-district-wrap" style="display:none;">
             <div class="form-group" id="r-grp-district-moto" style="margin-top:0;">
               <label class="flabel" style="margin-top:8px;">District (Moto) <span class="req">*</span></label>
