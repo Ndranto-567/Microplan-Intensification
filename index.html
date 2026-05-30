@@ -1124,12 +1124,13 @@ function d_addActeurRow(data) {
   const tr = document.createElement('tr');
   tr.id = id;
   tr.innerHTML = `
-    <td><input type="text" class="a-nom"   placeholder="Nom et prénom" value="${data?.nom||''}" oninput="d_updateActeursCount()"></td>
-    <td><input type="text" class="a-poste" placeholder="Poste / Fonction" value="${data?.poste||''}"></td>
-    <td><input type="text" class="a-cin"   placeholder="N° CIN" value="${data?.cin||''}"></td>
-    <td><input type="text" class="a-mvola warn" placeholder="03X XX XXX XX" value="${data?.mvola||''}"></td>
-    <td><button class="btn-del-row" onclick="d_delActeurRow('${id}')">✕</button></td>
+  <td><input type="text" class="a-nom"   placeholder="Nom et prénom" value="${data?.nom||''}" oninput="r_updateActeursCount()"></td>
+  <td><input type="text" class="a-poste" placeholder="Poste / Fonction" value="${data?.poste||''}"></td>
+  <td><input type="text" class="a-cin" placeholder="XXX XXX XXX XXX" maxlength="15" onkeydown="onlyDigits(event)" oninput="formatCIN(this)" inputmode="numeric" autocomplete="off"></td>
+  <td><input type="text" class="a-mvola warn" placeholder="03X XX XXX XX" maxlength="13" onkeydown="onlyDigits(event)" oninput="formatMobileMoney(this)"> inputmode="numeric" autocomplete="off"></td> 
+  <td><button class="btn-del-row" onclick="r_delActeurRow('${id}')">✕</button></td>
   `;
+  
   tbody.appendChild(tr);
   d_updateActeursCount();
   // Focus sur le premier champ
@@ -1210,13 +1211,23 @@ function r_addActeurRow(data) {
   tr.innerHTML = `
   <td><input type="text" class="a-nom"   placeholder="Nom et prénom" value="${data?.nom||''}" oninput="r_updateActeursCount()"></td>
   <td><input type="text" class="a-poste" placeholder="Poste / Fonction" value="${data?.poste||''}"></td>
-  <td><input type="text" class="a-cin"   placeholder="XXX XXX XXX XXX" maxlength="15" value="${data?.cin||''}" oninput="formatCIN(this)"></td>
-  <td><input type="text" class="a-mvola warn" placeholder="03X XX XXX XX" maxlength="13" value="${data?.mvola||''}" oninput="formatMobileMoney(this)"></td>
+  <td><input type="text" class="a-cin" placeholder="XXX XXX XXX XXX" maxlength="15" onkeydown="onlyDigits(event)" oninput="formatCIN(this)" inputmode="numeric" autocomplete="off"></td>
+  <td><input type="text" class="a-mvola warn" placeholder="03X XX XXX XX" maxlength="13" onkeydown="onlyDigits(event)" oninput="formatMobileMoney(this)"> inputmode="numeric" autocomplete="off"></td> 
   <td><button class="btn-del-row" onclick="r_delActeurRow('${id}')">✕</button></td>
   `;
   tbody.appendChild(tr);
   r_updateActeursCount();
   tr.querySelector('.a-nom').focus();
+}
+
+ function onlyDigits(event) {
+  if (!/[0-9]/.test(event.key) &&
+      event.key !== "Backspace" &&
+      event.key !== "Delete" &&
+      event.key !== "ArrowLeft" &&
+      event.key !== "ArrowRight") {
+    event.preventDefault();
+  }
 }
 function formatCIN(input) {
   // Ne garder que les chiffres
@@ -1231,8 +1242,8 @@ function formatCIN(input) {
     (_, a, b, c, d) => [a, b, c, d].filter(Boolean).join(' ')
   );
 }
-
-function formatMobileMoney(input) {
+  
+ function formatMobileMoney(input) {
   // Ne garder que les chiffres
   let v = input.value.replace(/\D/g, '');
 
