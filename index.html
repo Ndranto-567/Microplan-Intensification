@@ -704,14 +704,30 @@ function d_validate() {
   }
   return ok;
 }
-
+  
 async function d_submit() {
   if (!d_validate()) return;
+  
+  console.log('=== DÉBUT SOUMISSION ===');
+  
   const region   = document.getElementById('d-sel-region').value;
   const district = document.getElementById('d-sel-district').value;
+  const acteurs = d_getActeurs();
 
-  // ── Collecter les acteurs MAINTENANT, avant tout clear ──
- const acteurs = d_getActeurs();
+  console.log('Région:', region);
+  console.log('District:', district);
+  console.log('Acteurs:', acteurs);
+  
+  // Tester la connexion d'abord
+  try {
+    console.log('Test de connexion à GS_URL:', GS_URL);
+    const testFetch = await fetch(GS_URL, { method: 'GET' });
+    console.log('Test GET status:', testFetch.status);
+  } catch(err) {
+    console.error('Test connexion échoué:', err);
+    showToast('Impossible de contacter Google Sheet. Vérifiez l\'URL.', 'error');
+    return;
+  }
   
   // Afficher un message si aucun acteur : rajout 300526
   if (acteurs.length === 0) {
