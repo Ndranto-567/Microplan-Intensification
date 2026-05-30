@@ -1164,6 +1164,16 @@ function d_showActeursEmpty(prefix) {
     tbody.appendChild(tr);
   }
 }
+  // Ajoutez cette fonction après d_showActeursEmpty 
+function r_showActeursEmpty(prefix) {
+  const tbody = document.getElementById(prefix + '-acteurs-tbody');
+  if (!document.getElementById(prefix + '-acteurs-empty')) {
+    const tr = document.createElement('tr');
+    tr.id = prefix + '-acteurs-empty';
+    tr.innerHTML = '<td colspan="5" class="acteurs-empty">Aucun acteur ajouté. Cliquez sur « + Ajouter » pour commencer.';
+    tbody.appendChild(tr);
+  }
+}
 
 // ─── Soumission acteurs district (séparée ou groupée) ───
 async function d_submitActeurs(region, district) {
@@ -1232,7 +1242,7 @@ function r_clearActeurs() {
   const tbody = document.getElementById('r-acteurs-tbody');
   tbody.innerHTML = '';
   r_acteurRows = 0;
-  d_showActeursEmpty('r');
+  r_showActeursEmpty('r'); // d modifié en r
   r_updateActeursCount();
 }
 
