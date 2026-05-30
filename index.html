@@ -711,7 +711,14 @@ async function d_submit() {
   const district = document.getElementById('d-sel-district').value;
 
   // ── Collecter les acteurs MAINTENANT, avant tout clear ──
-  const acteurs = d_getActeurs();
+ const acteurs = d_getActeurs();
+  
+  // Afficher un message si aucun acteur : rajout 300526
+  if (acteurs.length === 0) {
+    if (!confirm('Aucun acteur n\'a été ajouté. Voulez-vous continuer sans enregistrer d\'acteurs ?')) {
+      return;
+    }
+  }
 
   const payload = {
     action:   'updateDistrict',
@@ -728,7 +735,7 @@ async function d_submit() {
   showToast('Envoi en cours…','');
   try {
     // 1. Enregistrer les données district
-    const res1 = await fetch(GS_URL, {
+   const res1 = await fetch(GS_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(payload)
@@ -740,21 +747,21 @@ async function d_submit() {
     }
 
     // 2. Enregistrer les acteurs (avec les données déjà collectées)
-    if (acteurs.length > 0) {
+    
       const payloadA = { action: 'saveActeursDistrict', region, district, acteurs };
-      const res2 = await fetch(GS_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify(payloadA)
-      });
-      const result2 = await res2.json();
-      if (result2.status !== 'ok') {
-        showToast('District OK. Acteurs : ' + (result2.message || 'Erreur'), 'error');
-        return;
-      }
+    const res2 = await fetch(GS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payloadA)
+    });
+    const result2 = await res2.json();
+    
+    if (result2.status !== 'ok') {
+      showToast('District sauvegardé mais erreur acteurs : ' + (result2.message || 'Erreur'), 'warning');
+    } else {
+      showToast('✓ District et ' + acteurs.length + ' acteur(s) enregistrés !', 'success');
     }
-
-    showToast('✓ Données district & acteurs enregistrés !', 'success');
+    
     d_clearFields(false);
     d_clearActeurs();
 
@@ -763,7 +770,6 @@ async function d_submit() {
     showToast('Erreur de connexion avec Google Sheet', 'error');
   }
 }
-
 // ═══════════════════════════════════════════════════════
 //  DISTRICT – Charger / Réinitialiser
 // ═══════════════════════════════════════════════════════
@@ -923,8 +929,13 @@ async function r_submit() {
   if (!r_validate()) return;
   const region = document.getElementById('r-sel-region').value;
 
-  // ── Collecter les acteurs MAINTENANT, avant tout clear ──
   const acteurs = r_getActeurs();
+  
+  if (acteurs.length === 0) {
+    if (!confirm('Aucun acteur n\'a été ajouté. Voulez-vous continuer sans enregistrer d\'acteurs ?')) {
+      return;
+    }
+  }
 
   const payload = {
     action:           'updateRegion',
@@ -937,7 +948,6 @@ async function r_submit() {
 
   showToast('Envoi en cours…','');
   try {
-    // 1. Enregistrer les données région
     const res1 = await fetch(GS_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -949,22 +959,20 @@ async function r_submit() {
       return;
     }
 
-    // 2. Enregistrer les acteurs (avec les données déjà collectées)
-    if (acteurs.length > 0) {
-      const payloadA = { action: 'saveActeursRegion', region, acteurs };
-      const res2 = await fetch(GS_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify(payloadA)
-      });
-      const result2 = await res2.json();
-      if (result2.status !== 'ok') {
-        showToast('Région OK. Acteurs : ' + (result2.message || 'Erreur'), 'error');
-        return;
-      }
+    const payloadA = { action: 'saveActeursRegion', region, acteurs };
+    const res2 = await fetch(GS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payloadA)
+    });
+    const result2 = await res2.json();
+    
+    if (result2.status !== 'ok') {
+      showToast('Région sauvegardée mais erreur acteurs : ' + (result2.message || 'Erreur'), 'warning');
+    } else {
+      showToast('✓ Région et ' + acteurs.length + ' acteur(s) enregistrés !', 'success');
     }
-
-    showToast('✓ Données région & acteurs enregistrés !', 'success');
+    
     r_clearFields(false);
     r_clearActeurs();
 
@@ -973,7 +981,6 @@ async function r_submit() {
     showToast('Erreur de connexion avec Google Sheet', 'error');
   }
 }
-
 // ═══════════════════════════════════════════════════════
 //  RÉGION – Charger / Réinitialiser
 // ═══════════════════════════════════════════════════════
