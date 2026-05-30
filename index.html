@@ -769,12 +769,13 @@ async function d_submit() {
     // Dans d_submit, avant l'envoi :
 console.log('Acteurs à envoyer:', acteurs);
 console.log('Payload acteurs:', payloadA);
-    
+
     const res2 = await fetch(GS_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(payloadA)
-    });
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },  // Changé de text/plain à application/json
+          body: JSON.stringify(payloadA)
+        });
+   
     const result2 = await res2.json();
     
     if (result2.status !== 'ok') {
@@ -983,9 +984,10 @@ async function r_submit() {
     const payloadA = { action: 'saveActeursRegion', region, acteurs };
     const res2 = await fetch(GS_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(payloadA)
-    });
+      headers: { 'Content-Type': 'application/json' },  // Changé
+  body: JSON.stringify(payloadA)
+});
+ 
     const result2 = await res2.json();
     
     if (result2.status !== 'ok') {
