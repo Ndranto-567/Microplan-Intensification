@@ -1228,8 +1228,8 @@ function r_delActeurRow(id) {
   const tr = document.getElementById(id);
   if (tr) tr.remove();
   r_updateActeursCount();
-  if (document.getElementById('r-acteurs-tbody').children.length === 0) {
-    d_showActeursEmpty('r');
+   if (document.getElementById('r-acteurs-tbody').children.length === 0) {
+    r_showActeursEmpty('r');
   }
 }
 
