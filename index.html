@@ -1366,7 +1366,8 @@ function showToast(msg, type) {
   const t = document.getElementById('toast');
   document.getElementById('toast-msg').textContent = msg;
   t.className = type ? `show ${type}` : 'show';
-  setTimeout(()=>{ t.className = type||''; }, 3500);
+  // Succès reste plus longtemps et disparaît après 6s, erreur après 4s
+  setTimeout(()=>{ t.className = type||''; }, type==='success' ? 6000 : 4000);
 }
 // ═══════════════════════════════════════════════════════
 //  ACTEURS – DISTRICT
