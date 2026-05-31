@@ -1020,19 +1020,46 @@ async function d_submit() {
     moto:     d_moto    ? 'M' : ''
   };
 
-  showToast('Envoi en cours…','');
-  try {
-    // 1. Enregistrer les données district
-    const res1 = await fetch(GS_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(payload)
-    });
-    const result1 = await res1.json();
-    if (result1.status !== 'ok') {
-      showToast(result1.message || 'Erreur Apps Script', 'error');
+ // Griser le bouton
+const btnD = document.querySelector('#page-district .btn-primary');
+btnD.disabled = true;
+btnD.innerHTML = '⏳ Sauvegarde en cours…';
+btnD.style.opacity = '0.6';
+btnD.style.cursor  = 'not-allowed';
+
+showToast('⏳ Veuillez patienter, les données sont en cours d\'enregistrement…', '');
+
+try {
+  const result1 = await callSheet(payload);
+  if (result1.status !== 'ok') {
+    showToast(result1.message || 'Erreur Apps Script', 'error');
+    return;
+  }
+
+  if (acteurs.length > 0) {
+    const result2 = await callSheet({ action:'saveActeursDistrict', region, district, acteurs });
+    if (result2.status !== 'ok') {
+      showToast('District OK. Acteurs : ' + (result2.message||'Erreur'), 'error');
       return;
     }
+  }
+
+  showToast('✅ Saisie terminée ! Données district & acteurs bien enregistrés.', 'success');
+  setTimeout(() => {
+    d_clearFields(true);
+    d_clearActeurs();
+  }, 2000);
+
+} catch (err) {
+  console.error(err);
+  showToast('Erreur de connexion avec Google Sheet', 'error');
+} finally {
+  // Réactiver le bouton dans tous les cas
+  btnD.disabled = false;
+  btnD.innerHTML = '💾 Enregistrer dans Google Sheet';
+  btnD.style.opacity = '';
+  btnD.style.cursor  = '';
+}
 
     // 2. Enregistrer les acteurs (avec les données déjà collectées)
     if (acteurs.length > 0) {
