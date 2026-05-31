@@ -878,6 +878,29 @@ function d_onDistrictChange() {
   d_clearFields(false);
 }
 
+  async function d_loadData() {
+  const region   = document.getElementById('d-sel-region').value;
+  const district = document.getElementById('d-sel-district').value;
+  if (!region || !district) { showToast('Sélectionnez région et district.', 'error'); return; }
+  try {
+    showToast('Chargement des données…', '');
+    const data = await callSheet({ action: 'getDistrict', region, district });
+    if (data.status !== 'ok') { showToast(data.message || 'Aucune donnée trouvée.', 'error'); return; }
+    d_setRiposte(data.riposte);
+    document.getElementById('d-nb-csb').value = data.nb_csb || '';
+    document.getElementById('d-nb-fkt').value = data.nb_fkt || '';
+    document.getElementById('d-nb-ac').value  = data.nb_ac  || '';
+    d_voiture = data.voiture === 'V'; d_moto = data.moto === 'M';
+    document.getElementById('d-pill-voiture').className = 'check-pill' + (d_voiture ? ' checked' : '');
+    document.getElementById('d-pill-moto').className    = 'check-pill' + (d_moto    ? ' checked' : '');
+    d_updateSimulator();
+    d_clearActeurs();
+    const dataA = await callSheet({ action: 'getActeursDistrict', region, district });
+    if (dataA.status === 'ok' && dataA.acteurs) dataA.acteurs.forEach(a => d_addActeurRow(a));
+    showToast('Données chargées depuis Google Sheet', 'success');
+  } catch (err) { console.error(err); showToast('Erreur de connexion : ' + err.message, 'error'); }
+}
+
 // ═══════════════════════════════════════════════════════
 //  DISTRICT – Riposte
 // ═══════════════════════════════════════════════════════
@@ -1037,34 +1060,7 @@ async function d_submit() {
   }
 }
 
-// ═══════════════════════════════════════════════════════
-//  DISTRICT – Charger / Réinitialiser
-// ═══════════════════════════════════════════════════════
-async function loadData() {
-  const region   = document.getElementById('ac-sel-region').value;
-  const district = document.getElementById('ac-sel-district').value;
-  if (!region || !district) { showToast('Sélectionnez région et district.', 'error'); return; }
-  showToast('Chargement…', '');
-  try {
-    const data = await callSheet({ action: 'getActeursCommunautaires', region, district });
-    if (data.status === 'ok' && data.acteurs && data.acteurs.length > 0) {
-      ac_rows = data.acteurs.map(a => ({
-        _id: ++ac_rowIdCounter,
-        csb: a.csb || '', fokontany: a.fokontany || '',
-        nom: a.nom || '', poste: a.poste || '',
-        cin: a.cin || '', mvola: a.mvola || ''
-      }));
-      ac_currentPage = 1;
-      ac_renderTable();
-      showToast('✓ ' + ac_rows.length + ' acteur(s) chargé(s)', 'success');
-    } else {
-      showToast(data.message || 'Aucune donnée trouvée.', 'error');
-    }
-  } catch (err) {
-    console.error(err);
-    showToast('Erreur de connexion', 'error');
-  }
-}
+
 // ═══════════════════════════════════════════════════════
 //  RÉGION – Cascade région → listes districts
 // ═══════════════════════════════════════════════════════
@@ -1766,17 +1762,17 @@ async function submitData() {
 }
 
 async function loadData() {
-  var region=document.getElementById('ac-sel-region').value, district=document.getElementById('ac-sel-district').value;
-  if(!region||!district){showToast('Sélectionnez région et district.','error');return;}
-  showToast('Chargement…','');
+  var region   = document.getElementById('ac-sel-region').value;
+  var district = document.getElementById('ac-sel-district').value;
+  if (!region || !district) { showToast('Sélectionnez région et district.', 'error'); return; }
+  showToast('Chargement…', '');
   try {
-    var url=GS_URL+'?action=getActeursCommunautaires&region='+encodeURIComponent(region)+'&district='+encodeURIComponent(district);
-    var res=await fetch(url); var data=await res.json();
-    if(data.status==='ok'&&data.acteurs&&data.acteurs.length>0) {
-      ac_rows=data.acteurs.map(function(a){return{_id:++ac_rowIdCounter,csb:a.csb||'',fokontany:a.fokontany||'',nom:a.nom||'',poste:a.poste||'',cin:a.cin||'',mvola:a.mvola||''};});
-      ac_currentPage=1; ac_renderTable(); showToast('✓ '+ac_rows.length+' acteur(s) chargé(s)','success');
-    } else showToast(data.message||'Aucune donnée trouvée.','warn');
-  } catch(err){console.error(err);showToast('Erreur de connexion','error');}
+    var data = await callSheet({ action: 'getActeursCommunautaires', region: region, district: district });
+    if (data.status === 'ok' && data.acteurs && data.acteurs.length > 0) {
+      ac_rows = data.acteurs.map(function(a) { return { _id: ++ac_rowIdCounter, csb: a.csb||'', fokontany: a.fokontany||'', nom: a.nom||'', poste: a.poste||'', cin: a.cin||'', mvola: a.mvola||'' }; });
+      ac_currentPage = 1; ac_renderTable(); showToast('✓ ' + ac_rows.length + ' acteur(s) chargé(s)', 'success');
+    } else { showToast(data.message || 'Aucune donnée trouvée.', 'error'); }
+  } catch(err) { console.error(err); showToast('Erreur de connexion', 'error'); }
 }
 
 function exportCSV() {
