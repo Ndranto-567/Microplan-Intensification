@@ -1004,85 +1004,47 @@ async function d_submit() {
   if (!d_validate()) return;
   const region   = document.getElementById('d-sel-region').value;
   const district = document.getElementById('d-sel-district').value;
-
-  // ── Collecter les acteurs MAINTENANT, avant tout clear ──
-  const acteurs = d_getActeurs();
+  const acteurs  = d_getActeurs();
 
   const payload = {
-    action:   'updateDistrict',
-    region,
-    district,
-    riposte:  d_riposte,
-    nb_csb:   d_riposte==='Y' ? document.getElementById('d-nb-csb').value : '',
-    nb_fkt:   d_riposte==='Y' ? document.getElementById('d-nb-fkt').value : '',
-    nb_ac:    d_riposte==='Y' ? document.getElementById('d-nb-ac').value  : '',
-    voiture:  d_voiture ? 'V' : '',
-    moto:     d_moto    ? 'M' : ''
+    action:'updateDistrict', region, district,
+    riposte: d_riposte,
+    nb_csb:  d_riposte==='Y' ? document.getElementById('d-nb-csb').value : '',
+    nb_fkt:  d_riposte==='Y' ? document.getElementById('d-nb-fkt').value : '',
+    nb_ac:   d_riposte==='Y' ? document.getElementById('d-nb-ac').value  : '',
+    voiture: d_voiture ? 'V' : '',
+    moto:    d_moto    ? 'M' : ''
   };
 
- // Griser le bouton
-const btnD = document.querySelector('#page-district .btn-primary');
-btnD.disabled = true;
-btnD.innerHTML = '⏳ Sauvegarde en cours…';
-btnD.style.opacity = '0.6';
-btnD.style.cursor  = 'not-allowed';
+  const btnD = document.querySelector('#page-district .btn-primary');
+  btnD.disabled = true;
+  btnD.innerHTML = '⏳ Sauvegarde en cours…';
+  btnD.style.opacity = '0.6';
+  btnD.style.cursor  = 'not-allowed';
+  showToast('⏳ Veuillez patienter, les données sont en cours d\'enregistrement…', '');
 
-showToast('⏳ Veuillez patienter, les données sont en cours d\'enregistrement…', '');
+  try {
+    const result1 = await callSheet(payload);
+    if (result1.status !== 'ok') { showToast(result1.message || 'Erreur Apps Script', 'error'); return; }
 
-try {
-  const result1 = await callSheet(payload);
-  if (result1.status !== 'ok') {
-    showToast(result1.message || 'Erreur Apps Script', 'error');
-    return;
-  }
-
-  if (acteurs.length > 0) {
-    const result2 = await callSheet({ action:'saveActeursDistrict', region, district, acteurs });
-    if (result2.status !== 'ok') {
-      showToast('District OK. Acteurs : ' + (result2.message||'Erreur'), 'error');
-      return;
-    }
-  }
-
-  showToast('✅ Saisie terminée ! Données district & acteurs bien enregistrés.', 'success');
-  setTimeout(() => {
-    d_clearFields(true);
-    d_clearActeurs();
-  }, 2000);
-
-} catch (err) {
-  console.error(err);
-  showToast('Erreur de connexion avec Google Sheet', 'error');
-} finally {
-  // Réactiver le bouton dans tous les cas
-  btnD.disabled = false;
-  btnD.innerHTML = '💾 Enregistrer dans Google Sheet';
-  btnD.style.opacity = '';
-  btnD.style.cursor  = '';
-}
-
-    // 2. Enregistrer les acteurs (avec les données déjà collectées)
     if (acteurs.length > 0) {
-      const payloadA = { action: 'saveActeursDistrict', region, district, acteurs };
-      const res2 = await fetch(GS_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify(payloadA)
-      });
-      const result2 = await res2.json();
-      if (result2.status !== 'ok') {
-        showToast('District OK. Acteurs : ' + (result2.message || 'Erreur'), 'error');
-        return;
-      }
+      const result2 = await callSheet({ action:'saveActeursDistrict', region, district, acteurs });
+      if (result2.status !== 'ok') { showToast('District OK. Acteurs : ' + (result2.message||'Erreur'), 'error'); return; }
     }
 
-        showToast('✅ Saisie terminée ! Données district & acteurs bien enregistrés.', 'success');
-        setTimeout(() => {
-          d_clearFields(true);
-          d_clearActeurs();
-        }, 2000);
+    showToast('✅ Saisie terminée ! Données district & acteurs bien enregistrés.', 'success');
+    setTimeout(() => { d_clearFields(true); d_clearActeurs(); }, 2000);
 
   } catch (err) {
+    console.error(err);
+    showToast('Erreur de connexion avec Google Sheet', 'error');
+  } finally {
+    btnD.disabled = false;
+    btnD.innerHTML = '💾 Enregistrer dans Google Sheet';
+    btnD.style.opacity = '';
+    btnD.style.cursor  = '';
+  }
+} catch (err) {
     console.error(err);
     showToast('Erreur de connexion avec Google Sheet', 'error');
   }
