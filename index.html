@@ -1207,85 +1207,46 @@ function r_validate() {
 
 async function r_submit() {
   if (!r_validate()) return;
-  const region = document.getElementById('r-sel-region').value;
-
-  // ── Collecter les acteurs MAINTENANT, avant tout clear ──
+  const region  = document.getElementById('r-sel-region').value;
   const acteurs = r_getActeurs();
 
   const payload = {
-    action:           'updateRegion',
-    region,
+    action: 'updateRegion', region,
     voiture:          r_voiture ? 'V' : '',
     district_voiture: r_voiture ? document.getElementById('r-sel-district-voiture').value : '',
     moto:             r_moto    ? 'M' : '',
     district_moto:    r_moto    ? document.getElementById('r-sel-district-moto').value    : ''
   };
 
- // Griser le bouton
-const btnR = document.querySelector('#page-region .btn-purple');
-btnR.disabled = true;
-btnR.innerHTML = '⏳ Sauvegarde en cours…';
-btnR.style.opacity = '0.6';
-btnR.style.cursor  = 'not-allowed';
+  const btnR = document.querySelector('#page-region .btn-purple');
+  btnR.disabled = true;
+  btnR.innerHTML = '⏳ Sauvegarde en cours…';
+  btnR.style.opacity = '0.6';
+  btnR.style.cursor  = 'not-allowed';
+  showToast('⏳ Veuillez patienter, les données sont en cours d\'enregistrement…', '');
 
-showToast('⏳ Veuillez patienter, les données sont en cours d\'enregistrement…', '');
+  try {
+    const result1 = await callSheet(payload);
+    if (result1.status !== 'ok') { showToast(result1.message || 'Erreur Apps Script', 'error'); return; }
 
-try {
-  const result1 = await callSheet(payload);
-  if (result1.status !== 'ok') {
-    showToast(result1.message || 'Erreur Apps Script', 'error');
-    return;
-  }
-
-  if (acteurs.length > 0) {
-    const result2 = await callSheet({ action:'saveActeursRegion', region, acteurs });
-    if (result2.status !== 'ok') {
-      showToast('Région OK. Acteurs : ' + (result2.message||'Erreur'), 'error');
-      return;
-    }
-  }
-
-  showToast('✅ Saisie terminée ! Données région & acteurs bien enregistrés.', 'success');
-  setTimeout(() => {
-    r_clearFields(true);
-    r_clearActeurs();
-  }, 2000);
-
-} catch (err) {
-  console.error(err);
-  showToast('Erreur de connexion avec Google Sheet', 'error');
-} finally {
-  // Réactiver le bouton dans tous les cas
-  btnR.disabled = false;
-  btnR.innerHTML = '💾 Enregistrer dans Google Sheet';
-  btnR.style.opacity = '';
-  btnR.style.cursor  = '';
-}
-  
-   
-
-    // 2. Enregistrer les acteurs (avec les données déjà collectées)
     if (acteurs.length > 0) {
-      const payloadA = { action: 'saveActeursRegion', region, acteurs };
-      const res2 = await fetch(GS_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify(payloadA)
-      });
-      const result2 = await res2.json();
-      if (result2.status !== 'ok') {
-        showToast('Région OK. Acteurs : ' + (result2.message || 'Erreur'), 'error');
-        return;
-      }
+      const result2 = await callSheet({ action:'saveActeursRegion', region, acteurs });
+      if (result2.status !== 'ok') { showToast('Région OK. Acteurs : ' + (result2.message||'Erreur'), 'error'); return; }
     }
 
-      showToast('✅ Saisie terminée ! Données région & acteurs bien enregistrés.', 'success');
-      setTimeout(() => {
-        r_clearFields(true);
-        r_clearActeurs();
-      }, 2000);
+    showToast('✅ Saisie terminée ! Données région & acteurs bien enregistrés.', 'success');
+    setTimeout(() => { r_clearFields(true); r_clearActeurs(); }, 2000);
 
   } catch (err) {
+    console.error(err);
+    showToast('Erreur de connexion avec Google Sheet', 'error');
+  } finally {
+    btnR.disabled = false;
+    btnR.innerHTML = '💾 Enregistrer dans Google Sheet';
+    btnR.style.opacity = '';
+    btnR.style.cursor  = '';
+  }
+} catch (err) {
     console.error(err);
     showToast('Erreur de connexion avec Google Sheet', 'error');
   }
