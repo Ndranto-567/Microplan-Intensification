@@ -1041,60 +1041,35 @@ async function d_submit() {
 //  DISTRICT – Charger / Réinitialiser
 // ═══════════════════════════════════════════════════════
 async function d_loadData() {
-  const region = document.getElementById('d-sel-region').value;
+  const region   = document.getElementById('d-sel-region').value;
   const district = document.getElementById('d-sel-district').value;
   if (!region || !district) { showToast('Sélectionnez région et district.', 'error'); return; }
   try {
-    showToast('Chargement des données…','');
-    const url = `${GS_URL}?action=getDistrict&region=${encodeURIComponent(region)}&district=${encodeURIComponent(district)}`;
-    const response = await fetch(url);
-    const data = await response.json();
+    showToast('Chargement des données…', '');
+
+    const data = await callSheet({ action: 'getDistrict', region, district });
     if (data.status !== 'ok') { showToast(data.message || 'Aucune donnée trouvée.', 'error'); return; }
+
     d_setRiposte(data.riposte);
     document.getElementById('d-nb-csb').value = data.nb_csb || '';
     document.getElementById('d-nb-fkt').value = data.nb_fkt || '';
-    document.getElementById('d-nb-ac').value  = data.nb_ac || '';
+    document.getElementById('d-nb-ac').value  = data.nb_ac  || '';
     d_voiture = data.voiture === 'V';
-    d_moto    = data.moto === 'M';
+    d_moto    = data.moto    === 'M';
     document.getElementById('d-pill-voiture').className = 'check-pill' + (d_voiture ? ' checked' : '');
     document.getElementById('d-pill-moto').className    = 'check-pill' + (d_moto    ? ' checked' : '');
     d_updateSimulator();
 
-    // Charger les acteurs district
     d_clearActeurs();
-    const urlA = `${GS_URL}?action=getActeursDistrict&region=${encodeURIComponent(region)}&district=${encodeURIComponent(district)}`;
-    const resA = await fetch(urlA);
-    const dataA = await resA.json();
-    if (dataA.status === 'ok' && dataA.acteurs) {
-      dataA.acteurs.forEach(a => d_addActeurRow(a));
-    }
+    const dataA = await callSheet({ action: 'getActeursDistrict', region, district });
+    if (dataA.status === 'ok' && dataA.acteurs) dataA.acteurs.forEach(a => d_addActeurRow(a));
 
     showToast('Données chargées depuis Google Sheet', 'success');
   } catch (err) {
     console.error(err);
-    showToast('Erreur de lecture Google Sheet', 'error');
+    showToast('Erreur de connexion : ' + err.message, 'error');
   }
 }
-
-function d_clearFields(resetSelects) {
-  ['d-nb-fs','d-nb-csb','d-nb-fkt','d-nb-ac'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
-  d_riposte=null; d_voiture=false; d_moto=false;
-  document.getElementById('d-pill-oui').className='radio-pill yes';
-  document.getElementById('d-pill-non').className='radio-pill no';
-  document.getElementById('d-pill-voiture').className='check-pill';
-  document.getElementById('d-pill-moto').className='check-pill';
-  document.getElementById('riposte-fields').classList.remove('visible');
-  document.getElementById('d-budget').classList.remove('visible');
-  ['d-grp-region','d-grp-district','d-grp-nb-csb','d-grp-nb-fkt','d-grp-nb-ac'].forEach(id=>setErr(id,false));
-  if (resetSelects) {
-    document.getElementById('d-sel-region').value='';
-    const sd=document.getElementById('d-sel-district');
-    sd.innerHTML='<option value="">— Sélectionner un district —</option>';
-    sd.disabled=true;
-  }
-}
-function d_reset() { d_clearFields(true); d_clearActeurs(); }
-
 // ═══════════════════════════════════════════════════════
 //  RÉGION – Cascade région → listes districts
 // ═══════════════════════════════════════════════════════
