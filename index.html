@@ -900,6 +900,27 @@ function d_onDistrictChange() {
     showToast('Données chargées depuis Google Sheet', 'success');
   } catch (err) { console.error(err); showToast('Erreur de connexion : ' + err.message, 'error'); }
 }
+   function d_clearFields(resetSelects) {
+  ['d-nb-fs','d-nb-csb','d-nb-fkt','d-nb-ac'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  d_riposte = null; d_voiture = false; d_moto = false;
+  document.getElementById('d-pill-oui').className = 'radio-pill yes';
+  document.getElementById('d-pill-non').className = 'radio-pill no';
+  document.getElementById('d-pill-voiture').className = 'check-pill';
+  document.getElementById('d-pill-moto').className    = 'check-pill';
+  document.getElementById('riposte-fields').classList.remove('visible');
+  document.getElementById('d-budget').classList.remove('visible');
+  ['d-grp-region','d-grp-district','d-grp-nb-csb','d-grp-nb-fkt','d-grp-nb-ac'].forEach(id => setErr(id, false));
+  if (resetSelects) {
+    document.getElementById('d-sel-region').value = '';
+    const sd = document.getElementById('d-sel-district');
+    sd.innerHTML = '<option value="">— Sélectionner un district —</option>';
+    sd.disabled = true;
+  }
+}
+
+function d_reset() { d_clearFields(true); d_clearActeurs(); }
 
 // ═══════════════════════════════════════════════════════
 //  DISTRICT – Riposte
@@ -1803,28 +1824,6 @@ function ac_showProgress(visible, msg, pct) {
   document.getElementById('upload-msg').textContent=msg||'';
   document.getElementById('progress-bar').style.width=(pct||0)+'%';
 }
-
-  function d_clearFields(resetSelects) {
-  ['d-nb-fs','d-nb-csb','d-nb-fkt','d-nb-ac'].forEach(id => {
-    const el = document.getElementById(id); if (el) el.value = '';
-  });
-  d_riposte = null; d_voiture = false; d_moto = false;
-  document.getElementById('d-pill-oui').className = 'radio-pill yes';
-  document.getElementById('d-pill-non').className = 'radio-pill no';
-  document.getElementById('d-pill-voiture').className = 'check-pill';
-  document.getElementById('d-pill-moto').className    = 'check-pill';
-  document.getElementById('riposte-fields').classList.remove('visible');
-  document.getElementById('d-budget').classList.remove('visible');
-  ['d-grp-region','d-grp-district','d-grp-nb-csb','d-grp-nb-fkt','d-grp-nb-ac'].forEach(id => setErr(id, false));
-  if (resetSelects) {
-    document.getElementById('d-sel-region').value = '';
-    const sd = document.getElementById('d-sel-district');
-    sd.innerHTML = '<option value="">— Sélectionner un district —</option>';
-    sd.disabled = true;
-  }
-}
-
-function d_reset() { d_clearFields(true); d_clearActeurs(); }
 
 </script>
 </body>
