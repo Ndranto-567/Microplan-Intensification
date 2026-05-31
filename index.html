@@ -1229,18 +1229,15 @@ async function r_loadData() {
   const region = document.getElementById('r-sel-region').value;
   if (!region) { showToast('Sélectionnez une région.', 'error'); return; }
   try {
-    showToast('Chargement des données…','');
-    const url = `${GS_URL}?action=getRegion&region=${encodeURIComponent(region)}`;
-    const response = await fetch(url);
-    const data = await response.json();
+    showToast('Chargement des données…', '');
+
+    const data = await callSheet({ action: 'getRegion', region });
     if (data.status !== 'ok') { showToast(data.message || 'Aucune donnée trouvée.', 'error'); return; }
 
     const rows = data.rows || [];
     const rowV = rows.find(r => r.voiture === 'V');
-    const rowM = rows.find(r => r.moto === 'M');
-
-    r_voiture = !!rowV;
-    r_moto    = !!rowM;
+    const rowM = rows.find(r => r.moto    === 'M');
+    r_voiture = !!rowV; r_moto = !!rowM;
 
     document.getElementById('r-pill-voiture').className = 'check-pill' + (r_voiture ? ' checked' : '');
     document.getElementById('r-pill-moto').className    = 'check-pill' + (r_moto    ? ' checked' : '');
@@ -1249,9 +1246,7 @@ async function r_loadData() {
     if (r_voiture && rowV.district) {
       const selV = document.getElementById('r-sel-district-voiture');
       selV.disabled = false;
-      if (selV.options.length <= 1) {
-        REGIONS_DISTRICTS[region]?.forEach(d => selV.appendChild(new Option(d, d)));
-      }
+      if (selV.options.length <= 1) REGIONS_DISTRICTS[region]?.forEach(d => selV.appendChild(new Option(d, d)));
       selV.value = rowV.district;
     }
 
@@ -1259,48 +1254,20 @@ async function r_loadData() {
     if (r_moto && rowM.district) {
       const selM = document.getElementById('r-sel-district-moto');
       selM.disabled = false;
-      if (selM.options.length <= 1) {
-        REGIONS_DISTRICTS[region]?.forEach(d => selM.appendChild(new Option(d, d)));
-      }
+      if (selM.options.length <= 1) REGIONS_DISTRICTS[region]?.forEach(d => selM.appendChild(new Option(d, d)));
       selM.value = rowM.district;
     }
 
-    // Charger les acteurs région
     r_clearActeurs();
-    const urlA = `${GS_URL}?action=getActeursRegion&region=${encodeURIComponent(region)}`;
-    const resA = await fetch(urlA);
-    const dataA = await resA.json();
-    if (dataA.status === 'ok' && dataA.acteurs) {
-      dataA.acteurs.forEach(a => r_addActeurRow(a));
-    }
+    const dataA = await callSheet({ action: 'getActeursRegion', region });
+    if (dataA.status === 'ok' && dataA.acteurs) dataA.acteurs.forEach(a => r_addActeurRow(a));
 
     showToast('Données chargées depuis Google Sheet', 'success');
   } catch (err) {
     console.error(err);
-    showToast('Erreur de lecture Google Sheet', 'error');
+    showToast('Erreur de connexion : ' + err.message, 'error');
   }
 }
-
-function r_clearFields(resetSelect) {
-  r_voiture = false; r_moto = false;
-  document.getElementById('r-pill-voiture').className = 'check-pill';
-  document.getElementById('r-pill-moto').className    = 'check-pill';
-  document.getElementById('r-voiture-district-wrap').style.display = 'none';
-  document.getElementById('r-moto-district-wrap').style.display    = 'none';
-  document.getElementById('r-sel-district-voiture').value = '';
-  document.getElementById('r-sel-district-moto').value    = '';
-  document.getElementById('r-budget').classList.remove('visible');
-  ['r-grp-region','r-grp-district-voiture','r-grp-district-moto'].forEach(id => setErr(id, false));
-  if (resetSelect) {
-    document.getElementById('r-sel-region').value = '';
-    ['r-sel-district-voiture','r-sel-district-moto'].forEach(id => {
-      const sel = document.getElementById(id);
-      sel.innerHTML = '<option value="">— Sélectionner un district —</option>';
-      sel.disabled = true;
-    });
-  }
-}
-function r_reset() { r_clearFields(true); r_clearActeurs(); }
 
 // ═══════════════════════════════════════════════════════
 //  ENVOI GOOGLE SHEET
