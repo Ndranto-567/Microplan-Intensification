@@ -767,8 +767,9 @@
 // ═══════════════════════════════════════════════════════
 //  CONFIGURATION
 // ═══════════════════════════════════════════════════════
-const DEPLOY_ID = 'AKfycbxmiUYbIMgSsrvXCiM13iwyIKo6UDv8r28i6jXXVOaXI-ldNy2pq0JGZZesvk6wnuEVsw';
-//const DEPLOY_ID = 'AKfycbxmiUYbIMgSsrvXCiM13iwyIKo6UDv8r28i6jXXVOaXI-ldNy2pq0JGZZesvk6wnuEVsw'
+
+
+const DEPLOY_ID = 'AKfycbxmiUYbIMgSsrvXCiM13iwyIKo6UDv8r28i6jXXVOaXI-ldNy2pq0JGZZesvk6wnuEVsw'
 const GS_URL    = `https://script.google.com/macros/s/${DEPLOY_ID}/exec`;
 
 
@@ -876,50 +877,6 @@ function d_updateDistricts() {
 function d_onDistrictChange() {
   d_clearFields(false);
 }
-
-  async function d_loadData() {
-  const region   = document.getElementById('d-sel-region').value;
-  const district = document.getElementById('d-sel-district').value;
-  if (!region || !district) { showToast('Sélectionnez région et district.', 'error'); return; }
-  try {
-    showToast('Chargement des données…', '');
-    const data = await callSheet({ action: 'getDistrict', region, district });
-    if (data.status !== 'ok') { showToast(data.message || 'Aucune donnée trouvée.', 'error'); return; }
-    d_setRiposte(data.riposte);
-    document.getElementById('d-nb-csb').value = data.nb_csb || '';
-    document.getElementById('d-nb-fkt').value = data.nb_fkt || '';
-    document.getElementById('d-nb-ac').value  = data.nb_ac  || '';
-    d_voiture = data.voiture === 'V'; d_moto = data.moto === 'M';
-    document.getElementById('d-pill-voiture').className = 'check-pill' + (d_voiture ? ' checked' : '');
-    document.getElementById('d-pill-moto').className    = 'check-pill' + (d_moto    ? ' checked' : '');
-    d_updateSimulator();
-    d_clearActeurs();
-    const dataA = await callSheet({ action: 'getActeursDistrict', region, district });
-    if (dataA.status === 'ok' && dataA.acteurs) dataA.acteurs.forEach(a => d_addActeurRow(a));
-    showToast('Données chargées depuis Google Sheet', 'success');
-  } catch (err) { console.error(err); showToast('Erreur de connexion : ' + err.message, 'error'); }
-}
-   function d_clearFields(resetSelects) {
-  ['d-nb-fs','d-nb-csb','d-nb-fkt','d-nb-ac'].forEach(id => {
-    const el = document.getElementById(id); if (el) el.value = '';
-  });
-  d_riposte = null; d_voiture = false; d_moto = false;
-  document.getElementById('d-pill-oui').className = 'radio-pill yes';
-  document.getElementById('d-pill-non').className = 'radio-pill no';
-  document.getElementById('d-pill-voiture').className = 'check-pill';
-  document.getElementById('d-pill-moto').className    = 'check-pill';
-  document.getElementById('riposte-fields').classList.remove('visible');
-  document.getElementById('d-budget').classList.remove('visible');
-  ['d-grp-region','d-grp-district','d-grp-nb-csb','d-grp-nb-fkt','d-grp-nb-ac'].forEach(id => setErr(id, false));
-  if (resetSelects) {
-    document.getElementById('d-sel-region').value = '';
-    const sd = document.getElementById('d-sel-district');
-    sd.innerHTML = '<option value="">— Sélectionner un district —</option>';
-    sd.disabled = true;
-  }
-}
-
-function d_reset() { d_clearFields(true); d_clearActeurs(); }
 
 // ═══════════════════════════════════════════════════════
 //  DISTRICT – Riposte
@@ -1080,6 +1037,52 @@ async function d_submit() {
   }
 }
 
+// ═══════════════════════════════════════════════════════
+//  DISTRICT – Charger / Réinitialiser
+// ═══════════════════════════════════════════════════════
+async function d_loadData() {
+  const region   = document.getElementById('d-sel-region').value;
+  const district = document.getElementById('d-sel-district').value;
+  if (!region || !district) { showToast('Sélectionnez région et district.', 'error'); return; }
+  try {
+    showToast('Chargement des données…', '');
+    const url = `${GS_URL}?action=getDistrict&region=${encodeURIComponent(region)}&district=${encodeURIComponent(district)}`;
+    const data = await fetch(url).then(r => r.json());
+    if (data.status !== 'ok') { showToast(data.message || 'Aucune donnée trouvée.', 'error'); return; }
+    d_setRiposte(data.riposte);
+    document.getElementById('d-nb-csb').value = data.nb_csb || '';
+    document.getElementById('d-nb-fkt').value = data.nb_fkt || '';
+    document.getElementById('d-nb-ac').value  = data.nb_ac  || '';
+    d_voiture = data.voiture === 'V'; d_moto = data.moto === 'M';
+    document.getElementById('d-pill-voiture').className = 'check-pill' + (d_voiture ? ' checked' : '');
+    document.getElementById('d-pill-moto').className    = 'check-pill' + (d_moto    ? ' checked' : '');
+    d_updateSimulator();
+    d_clearActeurs();
+    const urlA = `${GS_URL}?action=getActeursDistrict&region=${encodeURIComponent(region)}&district=${encodeURIComponent(district)}`;
+    const dataA = await fetch(urlA).then(r => r.json());
+    if (dataA.status === 'ok' && dataA.acteurs) dataA.acteurs.forEach(a => d_addActeurRow(a));
+    showToast('Données chargées depuis Google Sheet', 'success');
+  } catch (err) { console.error(err); showToast('Erreur de lecture Google Sheet', 'error'); }
+}
+
+function d_clearFields(resetSelects) {
+  ['d-nb-fs','d-nb-csb','d-nb-fkt','d-nb-ac'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  d_riposte=null; d_voiture=false; d_moto=false;
+  document.getElementById('d-pill-oui').className='radio-pill yes';
+  document.getElementById('d-pill-non').className='radio-pill no';
+  document.getElementById('d-pill-voiture').className='check-pill';
+  document.getElementById('d-pill-moto').className='check-pill';
+  document.getElementById('riposte-fields').classList.remove('visible');
+  document.getElementById('d-budget').classList.remove('visible');
+  ['d-grp-region','d-grp-district','d-grp-nb-csb','d-grp-nb-fkt','d-grp-nb-ac'].forEach(id=>setErr(id,false));
+  if (resetSelects) {
+    document.getElementById('d-sel-region').value='';
+    const sd=document.getElementById('d-sel-district');
+    sd.innerHTML='<option value="">— Sélectionner un district —</option>';
+    sd.disabled=true;
+  }
+}
+function d_reset() { d_clearFields(true); d_clearActeurs(); }
 
 // ═══════════════════════════════════════════════════════
 //  RÉGION – Cascade région → listes districts
@@ -1241,18 +1244,15 @@ async function r_loadData() {
   if (!region) { showToast('Sélectionnez une région.', 'error'); return; }
   try {
     showToast('Chargement des données…', '');
-
-    const data = await callSheet({ action: 'getRegion', region });
+    const url = `${GS_URL}?action=getRegion&region=${encodeURIComponent(region)}`;
+    const data = await fetch(url).then(r => r.json());
     if (data.status !== 'ok') { showToast(data.message || 'Aucune donnée trouvée.', 'error'); return; }
-
     const rows = data.rows || [];
     const rowV = rows.find(r => r.voiture === 'V');
     const rowM = rows.find(r => r.moto    === 'M');
     r_voiture = !!rowV; r_moto = !!rowM;
-
     document.getElementById('r-pill-voiture').className = 'check-pill' + (r_voiture ? ' checked' : '');
     document.getElementById('r-pill-moto').className    = 'check-pill' + (r_moto    ? ' checked' : '');
-
     document.getElementById('r-voiture-district-wrap').style.display = r_voiture ? 'block' : 'none';
     if (r_voiture && rowV.district) {
       const selV = document.getElementById('r-sel-district-voiture');
@@ -1260,7 +1260,6 @@ async function r_loadData() {
       if (selV.options.length <= 1) REGIONS_DISTRICTS[region]?.forEach(d => selV.appendChild(new Option(d, d)));
       selV.value = rowV.district;
     }
-
     document.getElementById('r-moto-district-wrap').style.display = r_moto ? 'block' : 'none';
     if (r_moto && rowM.district) {
       const selM = document.getElementById('r-sel-district-moto');
@@ -1268,21 +1267,47 @@ async function r_loadData() {
       if (selM.options.length <= 1) REGIONS_DISTRICTS[region]?.forEach(d => selM.appendChild(new Option(d, d)));
       selM.value = rowM.district;
     }
-
     r_clearActeurs();
-    const dataA = await callSheet({ action: 'getActeursRegion', region });
+    const urlA = `${GS_URL}?action=getActeursRegion&region=${encodeURIComponent(region)}`;
+    const dataA = await fetch(urlA).then(r => r.json());
     if (dataA.status === 'ok' && dataA.acteurs) dataA.acteurs.forEach(a => r_addActeurRow(a));
-
     showToast('Données chargées depuis Google Sheet', 'success');
-  } catch (err) {
-    console.error(err);
-    showToast('Erreur de connexion : ' + err.message, 'error');
+  } catch (err) { console.error(err); showToast('Erreur de lecture Google Sheet', 'error'); }
+}
+
+function r_clearFields(resetSelect) {
+  r_voiture = false; r_moto = false;
+  document.getElementById('r-pill-voiture').className = 'check-pill';
+  document.getElementById('r-pill-moto').className    = 'check-pill';
+  document.getElementById('r-voiture-district-wrap').style.display = 'none';
+  document.getElementById('r-moto-district-wrap').style.display    = 'none';
+  document.getElementById('r-sel-district-voiture').value = '';
+  document.getElementById('r-sel-district-moto').value    = '';
+  document.getElementById('r-budget').classList.remove('visible');
+  ['r-grp-region','r-grp-district-voiture','r-grp-district-moto'].forEach(id => setErr(id, false));
+  if (resetSelect) {
+    document.getElementById('r-sel-region').value = '';
+    ['r-sel-district-voiture','r-sel-district-moto'].forEach(id => {
+      const sel = document.getElementById(id);
+      sel.innerHTML = '<option value="">— Sélectionner un district —</option>';
+      sel.disabled = true;
+    });
   }
 }
+function r_reset() { r_clearFields(true); r_clearActeurs(); }
 
 // ═══════════════════════════════════════════════════════
 //  ENVOI GOOGLE SHEET
 // ═══════════════════════════════════════════════════════
+async function callSheet(payload) {
+  const res = await fetch(GS_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(payload)
+  });
+  return await res.json();
+}
+
 async function sendToSheet(payload, onSuccess) {
   showToast('Envoi en cours…','');
   try {
@@ -1304,14 +1329,7 @@ async function sendToSheet(payload, onSuccess) {
     showToast('Erreur de connexion avec Google Sheet', 'error');
   }
 }
-async function callSheet(payload) {
-  const res = await fetch(GS_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify(payload)
-  });
-  return await res.json();
-}
+
 // ═══════════════════════════════════════════════════════
 //  UTILITAIRES
 // ═══════════════════════════════════════════════════════
@@ -1787,11 +1805,17 @@ async function loadData() {
   if (!region || !district) { showToast('Sélectionnez région et district.', 'error'); return; }
   showToast('Chargement…', '');
   try {
-    var data = await callSheet({ action: 'getActeursCommunautaires', region: region, district: district });
+    var url = GS_URL + '?action=getActeursCommunautaires&region=' + encodeURIComponent(region) + '&district=' + encodeURIComponent(district);
+    var data = await fetch(url).then(function(r) { return r.json(); });
     if (data.status === 'ok' && data.acteurs && data.acteurs.length > 0) {
-      ac_rows = data.acteurs.map(function(a) { return { _id: ++ac_rowIdCounter, csb: a.csb||'', fokontany: a.fokontany||'', nom: a.nom||'', poste: a.poste||'', cin: a.cin||'', mvola: a.mvola||'' }; });
-      ac_currentPage = 1; ac_renderTable(); showToast('✓ ' + ac_rows.length + ' acteur(s) chargé(s)', 'success');
-    } else { showToast(data.message || 'Aucune donnée trouvée.', 'error'); }
+      ac_rows = data.acteurs.map(function(a) {
+        return { _id: ++ac_rowIdCounter, csb: a.csb||'', fokontany: a.fokontany||'', nom: a.nom||'', poste: a.poste||'', cin: a.cin||'', mvola: a.mvola||'' };
+      });
+      ac_currentPage = 1; ac_renderTable();
+      showToast('✓ ' + ac_rows.length + ' acteur(s) chargé(s)', 'success');
+    } else {
+      showToast(data.message || 'Aucune donnée trouvée.', 'error');
+    }
   } catch(err) { console.error(err); showToast('Erreur de connexion', 'error'); }
 }
 
