@@ -1046,25 +1046,23 @@ async function d_loadData() {
   if (!region || !district) { showToast('Sélectionnez région et district.', 'error'); return; }
   try {
     showToast('Chargement des données…', '');
-    const data = await callSheet({ action: 'getDistrict', region, district });
+    const url = `${GS_URL}?action=getDistrict&region=${encodeURIComponent(region)}&district=${encodeURIComponent(district)}`;
+    const data = await fetch(url).then(r => r.json());
     if (data.status !== 'ok') { showToast(data.message || 'Aucune donnée trouvée.', 'error'); return; }
     d_setRiposte(data.riposte);
     document.getElementById('d-nb-csb').value = data.nb_csb || '';
     document.getElementById('d-nb-fkt').value = data.nb_fkt || '';
     document.getElementById('d-nb-ac').value  = data.nb_ac  || '';
-    d_voiture = data.voiture === 'V';
-    d_moto    = data.moto    === 'M';
+    d_voiture = data.voiture === 'V'; d_moto = data.moto === 'M';
     document.getElementById('d-pill-voiture').className = 'check-pill' + (d_voiture ? ' checked' : '');
     document.getElementById('d-pill-moto').className    = 'check-pill' + (d_moto    ? ' checked' : '');
     d_updateSimulator();
     d_clearActeurs();
-    const dataA = await callSheet({ action: 'getActeursDistrict', region, district });
+    const urlA = `${GS_URL}?action=getActeursDistrict&region=${encodeURIComponent(region)}&district=${encodeURIComponent(district)}`;
+    const dataA = await fetch(urlA).then(r => r.json());
     if (dataA.status === 'ok' && dataA.acteurs) dataA.acteurs.forEach(a => d_addActeurRow(a));
     showToast('Données chargées depuis Google Sheet', 'success');
-  } catch (err) {
-    console.error(err);
-    showToast('Erreur de lecture Google Sheet', 'error');
-  }
+  } catch (err) { console.error(err); showToast('Erreur de lecture Google Sheet', 'error'); }
 }
 
 function d_clearFields(resetSelects) {
@@ -1246,7 +1244,8 @@ async function r_loadData() {
   if (!region) { showToast('Sélectionnez une région.', 'error'); return; }
   try {
     showToast('Chargement des données…', '');
-    const data = await callSheet({ action: 'getRegion', region });
+    const url = `${GS_URL}?action=getRegion&region=${encodeURIComponent(region)}`;
+    const data = await fetch(url).then(r => r.json());
     if (data.status !== 'ok') { showToast(data.message || 'Aucune donnée trouvée.', 'error'); return; }
     const rows = data.rows || [];
     const rowV = rows.find(r => r.voiture === 'V');
@@ -1269,13 +1268,11 @@ async function r_loadData() {
       selM.value = rowM.district;
     }
     r_clearActeurs();
-    const dataA = await callSheet({ action: 'getActeursRegion', region });
+    const urlA = `${GS_URL}?action=getActeursRegion&region=${encodeURIComponent(region)}`;
+    const dataA = await fetch(urlA).then(r => r.json());
     if (dataA.status === 'ok' && dataA.acteurs) dataA.acteurs.forEach(a => r_addActeurRow(a));
     showToast('Données chargées depuis Google Sheet', 'success');
-  } catch (err) {
-    console.error(err);
-    showToast('Erreur de lecture Google Sheet', 'error');
-  }
+  } catch (err) { console.error(err); showToast('Erreur de lecture Google Sheet', 'error'); }
 }
 
 function r_clearFields(resetSelect) {
@@ -1808,7 +1805,8 @@ async function loadData() {
   if (!region || !district) { showToast('Sélectionnez région et district.', 'error'); return; }
   showToast('Chargement…', '');
   try {
-    var data = await callSheet({ action: 'getActeursCommunautaires', region: region, district: district });
+    var url = GS_URL + '?action=getActeursCommunautaires&region=' + encodeURIComponent(region) + '&district=' + encodeURIComponent(district);
+    var data = await fetch(url).then(function(r) { return r.json(); });
     if (data.status === 'ok' && data.acteurs && data.acteurs.length > 0) {
       ac_rows = data.acteurs.map(function(a) {
         return { _id: ++ac_rowIdCounter, csb: a.csb||'', fokontany: a.fokontany||'', nom: a.nom||'', poste: a.poste||'', cin: a.cin||'', mvola: a.mvola||'' };
