@@ -830,7 +830,7 @@
     <div class="dash-summary">
       <div class="dash-kpi purple">
         <div class="kpi-val" id="db-kpi-emar">–</div>
-        <div class="kpi-label">Acteurs EMAR (Région)</div>
+        <div class="kpi-label">Acteurs EMAR</div>
       </div>
       <div class="dash-kpi">
         <div class="kpi-val" id="db-kpi-emad">–</div>
@@ -854,10 +854,10 @@
       <table class="dash-table">
         <thead>
           <tr>
-            <th>Région – District</th>
-            <th class="center">Nb EMAR (Région)</th>
-            <th class="center">Nb EMAD/CSB (District)</th>
-            <th class="center">Nb AC (Communautaires)</th>
+            <th>District</th>
+            <th class="center">Saisie Budget</th>
+            <th class="center">Nb EMAD/CSB</th>
+            <th class="center">Nb AC</th>
           </tr>
         </thead>
         <tbody id="db-acteurs-tbody"></tbody>
@@ -2094,9 +2094,6 @@ function db_render(data) {
   document.getElementById('db-kpi-manquants').textContent = data.nb_districts || 0;
   document.getElementById('db-kpis').style.display = 'block';
 
-  // Mettre à jour label KPI manquants
-  document.querySelector('#db-kpis .dash-kpi.warn .kpi-label').textContent = 'Districts prévus riposte';
-
   if (rows.length === 0) {
     document.getElementById('db-suivi-wrap').style.display = 'none';
     document.getElementById('db-empty').style.display = 'block';
@@ -2105,22 +2102,30 @@ function db_render(data) {
   document.getElementById('db-suivi-wrap').style.display = 'block';
   document.getElementById('db-empty').style.display = 'none';
 
-  // ── Tableau acteurs ──
+  // ── Tableau acteurs (dédupliqué par district) ──
   const tbody2 = document.getElementById('db-acteurs-tbody');
   tbody2.innerHTML = '';
-  // Dédupliquer par district pour les acteurs
   const seen = {};
   rows.forEach(function(row) {
-    const dk = db_esc(row.district);
+    const dk = (row.district || '').trim().toUpperCase();
     if (seen[dk]) return;
     seen[dk] = true;
-    const d = (row.district || '').trim().toUpperCase();
+
+    // Saisie district : au moins une valeur numérique non nulle dans les values
+    const hasSaisie = (row.values || []).some(function(v) { return typeof v === 'number' && v > 0; });
+    const bdgSaisie = hasSaisie
+      ? '<span class="badge badge-ok">✓ Saisi</span>'
+      : '<span class="badge badge-err">✗ Manquant</span>';
+
+    const nb_emad = (data.emad_per_district && data.emad_per_district[dk]) || 0;
+    const nb_ac   = (data.ac_per_district   && data.ac_per_district[dk])   || 0;
+
     const tr = document.createElement('tr');
     tr.innerHTML =
       '<td><strong>' + db_esc(row.district) + '</strong></td>' +
-      '<td class="center">' + (data.nb_emar || 0) + '</td>' +
-      '<td class="center">' + (data.emad_map && data.emad_map[d] ? data.emad_map[d] : 0) + '</td>' +
-      '<td class="center">' + (data.ac_map   && data.ac_map[d]   ? data.ac_map[d]   : 0) + '</td>';
+      '<td class="center">' + bdgSaisie + '</td>' +
+      '<td class="center">' + nb_emad + '</td>' +
+      '<td class="center">' + nb_ac   + '</td>';
     tbody2.appendChild(tr);
   });
 
@@ -2131,41 +2136,50 @@ function db_render(data) {
   const groups     = data.groups      || [];
   const subHeaders = data.sub_headers || [];
 
-  // Ligne 1 en-tête : groupes
+  // Ligne 1 : groupes
   const thead = document.createElement('thead');
   const tr1   = document.createElement('tr');
-  // Colonne District + Déplct
-  let thD = document.createElement('th');
+
+  // Colonne District (rowspan 2)
+  const thD = document.createElement('th');
   thD.textContent = 'District'; thD.rowSpan = 2;
   thD.style.cssText = 'background:#0f1f44;color:#fff;vertical-align:middle;';
   tr1.appendChild(thD);
 
-  let thDeplct = document.createElement('th');
-  thDeplct.textContent = 'Déplct'; thDeplct.rowSpan = 2;
-  thDeplct.style.cssText = 'background:#0f1f44;color:#fff;vertical-align:middle;text-align:center;';
-  tr1.appendChild(thDeplct);
-
-  const groupColors = ['#1a3a5c','#1a2a4a','#0f2233','#1a3a5c','#1a3a5c'];
-  groups.forEach(function(g, gi) {
-    if (!g.label) return; // skip empty label groups — handled by sub-headers
+  // Groupes CSB, District, Région
+  const groupColors = ['#1a3a5c','#1a2a4a','#0f2233'];
+  let gi = 0;
+  groups.forEach(function(g) {
+    if (!g.label) return;
     const th = document.createElement('th');
     th.textContent = g.label;
-    th.colSpan     = g.span;
-    th.style.cssText = 'text-align:center;background:' + groupColors[gi] + ';color:#e2e8f0;border-left:2px solid #2a3045;';
+    th.colSpan = g.span;
+    th.style.cssText = 'text-align:center;background:' + (groupColors[gi] || '#1a3a5c') + ';color:#e2e8f0;border-left:2px solid #2a3045;';
     tr1.appendChild(th);
+    gi++;
   });
-  // W et X sans groupe
+  // W et X sans groupe (span 1 chacun) — ajout de 2 th vides
+  for (let wx = 0; wx < 2; wx++) {
+    const th = document.createElement('th');
+    th.rowSpan = 2;
+    th.style.cssText = 'background:#1a2744;color:#e2e8f0;vertical-align:middle;text-align:center;border-left:2px solid #2a3045;white-space:nowrap;font-size:0.7rem;';
+    // Label depuis subHeaders (index 18 et 19 = TOTAL Ar et USD)
+    const idx = wx === 0 ? 19 : 20;
+    const lbl = String(subHeaders[idx] || '');
+    th.textContent = DB_ABREV[lbl] || lbl;
+    tr1.appendChild(th);
+  }
   thead.appendChild(tr1);
 
-  // Ligne 2 en-tête : sous-colonnes (sans col 0 = Déplct déjà inclus dans values)
+  // Ligne 2 : sous-colonnes (D à V = index 0 à 18, on skip 19 et 20 déjà en rowspan)
   const tr2 = document.createElement('tr');
   subHeaders.forEach(function(h, i) {
+    if (i >= 19) return; // TOTAL et USD déjà en rowspan
     const th = document.createElement('th');
     const label = String(h || '');
     th.textContent = DB_ABREV[label] || label;
     th.style.cssText = 'white-space:nowrap;font-size:0.7rem;text-align:center;';
-    // Bordure entre groupes
-    if (i === 6 || i === 12) th.style.borderLeft = '2px solid #2a3045';
+    if (i === 7 || i === 13) th.style.borderLeft = '2px solid #2a3045'; // séparateur groupes (après col J et P)
     tr2.appendChild(th);
   });
   thead.appendChild(tr2);
@@ -2175,31 +2189,33 @@ function db_render(data) {
   const tbody = document.createElement('tbody');
   rows.forEach(function(row) {
     const tr = document.createElement('tr');
+
     // Colonne District
     const tdD = document.createElement('td');
     tdD.innerHTML = '<strong>' + db_esc(row.district) + '</strong>';
     tr.appendChild(tdD);
 
-    // Icône déplacement (première valeur = col D = Moyen déplct)
-    const deplVal = String(row.values[0] || '').trim().toUpperCase();
-    const tdDeplct = document.createElement('td');
-    tdDeplct.style.textAlign = 'center';
-    tdDeplct.textContent = deplVal === 'V' ? '🚗' : deplVal === 'M' ? '🏍' : deplVal || '–';
-    tr.appendChild(tdDeplct);
-
-    // Valeurs budget (toutes les colonnes)
+    // Valeurs D à X (index 0 à 20)
+    // index 7 = Moyen dplct District → icône
+    // index 13 = Moyen dplct Région → icône
     row.values.forEach(function(val, i) {
-      if (i === 0) return; // déjà affiché comme icône
       const td = document.createElement('td');
-      td.style.cssText = 'text-align:right;font-family:JetBrains Mono,monospace;font-size:0.78rem;';
-      if (i === 6 || i === 12) td.style.borderLeft = '2px solid #2a3045';
-      if (typeof val === 'number' && val !== 0) {
-        // Détecter si c'est une colonne montant (pas un comptage)
+      // Séparateurs de groupes
+      if (i === 7 || i === 13) td.style.borderLeft = '2px solid #2a3045';
+
+      if (i === 7 || i === 13) {
+        // Colonnes Moyen déplacement → icône
+        const v = String(val || '').trim().toUpperCase();
+        td.style.textAlign = 'center';
+        td.textContent = v === 'V' ? '🚗' : v === 'M' ? '🏍' : '–';
+      } else if (typeof val === 'number' && val !== 0) {
+        td.style.cssText = 'text-align:right;font-family:JetBrains Mono,monospace;font-size:0.78rem;';
         td.textContent = Math.round(val).toLocaleString('fr-FR');
       } else if (val === 0 || val === '') {
+        td.style.cssText = 'text-align:right;color:var(--muted);font-size:0.78rem;';
         td.textContent = '–';
-        td.style.color = 'var(--muted)';
       } else {
+        td.style.cssText = 'text-align:right;font-size:0.78rem;';
         td.textContent = String(val);
       }
       tr.appendChild(td);
