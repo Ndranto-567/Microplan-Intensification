@@ -332,6 +332,42 @@
   .ac-empty { text-align:center;color:var(--muted);font-size:0.85rem;padding:32px;font-style:italic; }
   .ac-empty .ac-empty-icon { font-size:2rem;margin-bottom:8px;opacity:0.5; }
 
+  /* ── DASHBOARD ── */
+  #page-dashboard { display:none; }
+  .niveau-card.dashboard:hover { border-color:#0ea5e9; }
+  .niveau-card.dashboard .nc-title { color:#0ea5e9; }
+  .ct-dash { color:#0ea5e9; }
+  .ct-dash::before { background:#0ea5e9; }
+
+  .dash-summary { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; margin-bottom:20px; }
+  .dash-kpi { background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:16px; text-align:center; }
+  .dash-kpi .kpi-val { font-size:2rem; font-weight:700; font-family:'JetBrains Mono',monospace; color:#0ea5e9; }
+  .dash-kpi .kpi-label { font-size:0.75rem; color:var(--muted); margin-top:4px; }
+  .dash-kpi.warn .kpi-val { color:var(--warn); }
+  .dash-kpi.ok .kpi-val { color:var(--accent2); }
+  .dash-kpi.purple .kpi-val { color:var(--purple); }
+
+  .dash-table-wrap { overflow-x:auto; border-radius:10px; border:1px solid var(--border); margin-bottom:20px; }
+  .dash-table { width:100%; border-collapse:collapse; font-size:0.82rem; min-width:600px; }
+  .dash-table th { background:#1a2744; color:var(--label); font-weight:600; text-align:left; padding:10px 12px; font-size:0.73rem; text-transform:uppercase; letter-spacing:0.05em; white-space:nowrap; }
+  .dash-table th.center { text-align:center; }
+  .dash-table td { padding:8px 12px; border-bottom:1px solid var(--border); vertical-align:middle; }
+  .dash-table tr:last-child td { border-bottom:none; }
+  .dash-table tr:hover td { background:rgba(14,165,233,0.04); }
+  .dash-table td.center { text-align:center; }
+  .dash-table td.num { text-align:right; font-family:'JetBrains Mono',monospace; font-size:0.8rem; }
+
+  .badge { display:inline-flex; align-items:center; justify-content:center; border-radius:6px; padding:3px 10px; font-size:0.75rem; font-weight:600; white-space:nowrap; }
+  .badge-ok   { background:rgba(16,185,129,0.15); color:var(--accent2); border:1px solid rgba(16,185,129,0.3); }
+  .badge-warn { background:rgba(245,158,11,0.15);  color:var(--warn);    border:1px solid rgba(245,158,11,0.3); }
+  .badge-err  { background:rgba(239,68,68,0.15);   color:var(--danger);  border:1px solid rgba(239,68,68,0.3); }
+  .badge-off  { background:rgba(100,116,139,0.15); color:var(--muted);   border:1px solid rgba(100,116,139,0.3); }
+
+  .dash-section-title { font-size:0.85rem; font-weight:600; color:var(--label); margin:20px 0 10px; display:flex; align-items:center; gap:8px; }
+  .dash-section-title::before { content:''; display:inline-block; width:3px; height:14px; border-radius:2px; background:#0ea5e9; }
+  .btn-dash { background:rgba(14,165,233,0.15); color:#0ea5e9; border:1px solid rgba(14,165,233,0.3); }
+  .btn-dash:hover { background:rgba(14,165,233,0.25); }
+
 </style>
 </head>
 <body>
@@ -370,6 +406,11 @@
         <div class="nc-icon">👥</div>
         <div class="nc-title">Acteurs Communautaires</div>
         <div class="nc-desc">Import et saisie des AC par district</div>
+      </div>
+      <div class="niveau-card dashboard" onclick="showPage('dashboard')">
+        <div class="nc-icon">📊</div>
+        <div class="nc-title">Tableau de Bord</div>
+        <div class="nc-desc">Suivi budgétaire et saisies par région</div>
       </div>
     </div>
   </div>
@@ -759,6 +800,101 @@
 
 </div><!-- /page-communautaire -->
 
+<!-- ============ PAGE TABLEAU DE BORD ============ -->
+<div id="page-dashboard" class="container" style="max-width:1100px;">
+
+  <div class="status-bar">
+    <div class="dot connected"></div>
+    <span>Google Sheet connecté – Tableau de Bord</span>
+    <button class="btn btn-back" style="margin-left:auto;padding:6px 14px;font-size:0.78rem;" onclick="showPage('home')">← Retour</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title ct-dash">📍 Sélection de la Région</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="flabel">Région <span class="req">*</span></label>
+        <select id="db-sel-region">
+          <option value="">— Sélectionner une région —</option>
+        </select>
+      </div>
+    </div>
+    <div class="btn-row" style="margin-top:8px;">
+      <button class="btn btn-dash" onclick="db_load()">🔄 Actualiser le tableau de bord</button>
+    </div>
+  </div>
+
+  <div id="db-kpis" style="display:none;">
+    <div class="dash-summary">
+      <div class="dash-kpi purple">
+        <div class="kpi-val" id="db-kpi-emar">–</div>
+        <div class="kpi-label">Acteurs EMAR (Région)</div>
+      </div>
+      <div class="dash-kpi">
+        <div class="kpi-val" id="db-kpi-emad">–</div>
+        <div class="kpi-label">Acteurs EMAD/CSB total</div>
+      </div>
+      <div class="dash-kpi ok">
+        <div class="kpi-val" id="db-kpi-ac">–</div>
+        <div class="kpi-label">Acteurs Communautaires</div>
+      </div>
+      <div class="dash-kpi warn">
+        <div class="kpi-val" id="db-kpi-manquants">–</div>
+        <div class="kpi-label">Districts sans saisie</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="db-suivi-wrap" style="display:none;">
+
+    <div class="dash-section-title">📋 Suivi des saisies par district</div>
+    <div class="dash-table-wrap">
+      <table class="dash-table">
+        <thead>
+          <tr>
+            <th>District</th>
+            <th class="center">Saisie District</th>
+            <th class="center">Saisie Région</th>
+            <th class="center">Riposte</th>
+            <th class="center">Déplacement District</th>
+            <th class="center">Déplacement Région</th>
+          </tr>
+        </thead>
+        <tbody id="db-suivi-tbody"></tbody>
+      </table>
+    </div>
+
+    <div class="dash-section-title">👥 Acteurs par district</div>
+    <div class="dash-table-wrap">
+      <table class="dash-table">
+        <thead>
+          <tr>
+            <th>Région – District</th>
+            <th class="center">Nb EMAR (Région)</th>
+            <th class="center">Nb EMAD/CSB (District)</th>
+            <th class="center">Nb AC (Communautaires)</th>
+          </tr>
+        </thead>
+        <tbody id="db-acteurs-tbody"></tbody>
+      </table>
+    </div>
+
+    <div class="dash-section-title">💰 Budget par district</div>
+    <div class="dash-table-wrap">
+      <table class="dash-table" id="db-budget-table">
+        <thead><tr id="db-budget-thead"></tr></thead>
+        <tbody id="db-budget-tbody"></tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <div id="db-empty" style="display:none;text-align:center;color:var(--muted);padding:40px;font-style:italic;">
+    Sélectionnez une région et cliquez sur Actualiser.
+  </div>
+
+</div><!-- /page-dashboard -->
+
 <div id="toast"><span id="toast-msg">Message</span></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -835,21 +971,24 @@ function showPage(page) {
   document.getElementById('page-district').style.display      = page==='district'      ? 'block' : 'none';
   document.getElementById('page-region').style.display        = page==='region'        ? 'block' : 'none';
   document.getElementById('page-communautaire').style.display = page==='communautaire' ? 'block' : 'none';
+  document.getElementById('page-dashboard').style.display     = page==='dashboard'     ? 'block' : 'none';
 
-  const icons = { home:'🦠', district:'🏥', region:'🗺', communautaire:'👥' };
+  const icons = { home:'🦠', district:'🏥', region:'🗺', communautaire:'👥', dashboard:'📊' };
   const titles = {
     home:'Microplan – Intensification/Riposte Rougeole',
     district:'Formulaire District – Riposte Rougeole',
     region:'Formulaire Région – Riposte Rougeole',
-    communautaire:'Acteurs Communautaires – Riposte Rougeole'
+    communautaire:'Acteurs Communautaires – Riposte Rougeole',
+    dashboard:'Tableau de Bord – Suivi budgétaire'
   };
   const subs = {
     home:'Sélectionnez votre niveau de saisie',
     district:'Collecte de données EMAD et CSB',
     region:'Saisie des données EMAR',
-    communautaire:'Saisie et importation des acteurs communautaires par district'
+    communautaire:'Saisie et importation des acteurs communautaires par district',
+    dashboard:'Visualisation du suivi et des budgets par région'
   };
-  const iconClasses = { home:'icon-home', district:'icon-district', region:'icon-region', communautaire:'icon-home' };
+  const iconClasses = { home:'icon-home', district:'icon-district', region:'icon-region', communautaire:'icon-home', dashboard:'icon-home' };
 
   document.getElementById('header-icon').textContent  = icons[page];
   document.getElementById('header-icon').className    = 'header-icon ' + iconClasses[page];
@@ -1668,6 +1807,9 @@ document.addEventListener('DOMContentLoaded', function() {
   // Remplir liste région AC
   var sel = document.getElementById('ac-sel-region');
   if (sel) Object.keys(REGIONS_DISTRICTS).sort().forEach(function(r) { sel.appendChild(new Option(r, r)); });
+  // Remplir liste région Dashboard
+  var sdb = document.getElementById('db-sel-region');
+  if (sdb) Object.keys(REGIONS_DISTRICTS).sort().forEach(function(r) { sdb.appendChild(new Option(r, r)); });
 });
 
 function ac_renderTable() {
@@ -1847,6 +1989,108 @@ function ac_showProgress(visible, msg, pct) {
   document.getElementById('upload-msg').textContent=msg||'';
   document.getElementById('progress-bar').style.width=(pct||0)+'%';
 }
+
+// ═══════════════════════════════════════════════════════
+//  TABLEAU DE BORD
+// ═══════════════════════════════════════════════════════
+async function db_load() {
+  const region = document.getElementById('db-sel-region').value;
+  if (!region) { showToast('Sélectionnez une région.', 'error'); return; }
+  showToast('Chargement du tableau de bord…', '');
+  try {
+    const url = GS_URL + '?action=getDashboard&region=' + encodeURIComponent(region);
+    const data = await fetch(url).then(function(r) { return r.json(); });
+    if (data.status !== 'ok') { showToast(data.message || 'Erreur.', 'error'); return; }
+    db_render(data);
+    showToast('Tableau de bord actualisé !', 'success');
+  } catch(err) { console.error(err); showToast('Erreur de connexion', 'error'); }
+}
+
+function db_render(data) {
+  const districts = data.districts || [];
+
+  // KPIs
+  const totalEmad = districts.reduce(function(s, d) { return s + (d.nb_emad || 0); }, 0);
+  const totalAc   = districts.reduce(function(s, d) { return s + (d.nb_ac   || 0); }, 0);
+  const manquants = districts.filter(function(d) { return !d.saisi_district; }).length;
+  document.getElementById('db-kpi-emar').textContent      = data.nb_emar || 0;
+  document.getElementById('db-kpi-emad').textContent      = totalEmad;
+  document.getElementById('db-kpi-ac').textContent        = totalAc;
+  document.getElementById('db-kpi-manquants').textContent = manquants;
+  document.getElementById('db-kpis').style.display = 'block';
+
+  if (districts.length === 0) {
+    document.getElementById('db-suivi-wrap').style.display = 'none';
+    document.getElementById('db-empty').style.display = 'block';
+    return;
+  }
+  document.getElementById('db-suivi-wrap').style.display = 'block';
+  document.getElementById('db-empty').style.display = 'none';
+
+  // Tableau suivi saisies
+  const tbody1 = document.getElementById('db-suivi-tbody');
+  tbody1.innerHTML = '';
+  districts.forEach(function(d) {
+    const tr = document.createElement('tr');
+    const bdgD   = d.saisi_district ? '<span class="badge badge-ok">✓ Saisi</span>'    : '<span class="badge badge-err">✗ Manquant</span>';
+    const bdgR   = d.saisi_region   ? '<span class="badge badge-ok">✓ Saisi</span>'    : '<span class="badge badge-err">✗ Manquant</span>';
+    const bdgRip = d.riposte === 'Y' ? '<span class="badge badge-ok">Oui</span>'
+                 : d.riposte === 'N' ? '<span class="badge badge-warn">Non</span>'
+                 : '<span class="badge badge-off">–</span>';
+    const deplD  = [d.voiture_d === 'V' ? '🚗 Voiture' : '', d.moto_d === 'M' ? '🏍 Moto' : ''].filter(Boolean).join(' + ') || '–';
+    const deplR  = [d.voiture_r === 'V' ? '🚗 Voiture' : '', d.moto_r === 'M' ? '🏍 Moto' : ''].filter(Boolean).join(' + ') || '–';
+    tr.innerHTML =
+      '<td><strong>' + db_esc(d.district) + '</strong></td>' +
+      '<td class="center">' + bdgD   + '</td>' +
+      '<td class="center">' + bdgR   + '</td>' +
+      '<td class="center">' + bdgRip + '</td>' +
+      '<td class="center">' + deplD  + '</td>' +
+      '<td class="center">' + deplR  + '</td>';
+    tbody1.appendChild(tr);
+  });
+
+  // Tableau acteurs
+  const tbody2 = document.getElementById('db-acteurs-tbody');
+  tbody2.innerHTML = '';
+  districts.forEach(function(d) {
+    const tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td>' + db_esc(data.region) + ' – <strong>' + db_esc(d.district) + '</strong></td>' +
+      '<td class="center">' + (data.nb_emar || 0) + '</td>' +
+      '<td class="center">' + (d.nb_emad || 0)    + '</td>' +
+      '<td class="center">' + (d.nb_ac   || 0)    + '</td>';
+    tbody2.appendChild(tr);
+  });
+
+  // Tableau budget
+  const thead  = document.getElementById('db-budget-thead');
+  const tbody3 = document.getElementById('db-budget-tbody');
+  thead.innerHTML  = '';
+  tbody3.innerHTML = '';
+  if (data.budget_headers && data.budget_headers.length > 0) {
+    var thHtml = '<th>District</th>';
+    data.budget_headers.forEach(function(h) { thHtml += '<th class="center">' + db_esc(String(h)) + '</th>'; });
+    thead.innerHTML = thHtml;
+    districts.forEach(function(d) {
+      const tr = document.createElement('tr');
+      var tdHtml = '<td><strong>' + db_esc(d.district) + '</strong></td>';
+      (d.budget || []).forEach(function(val) {
+        var fmt = (typeof val === 'number') ? Math.round(val).toLocaleString('fr-FR') + ' Ar' : (String(val) || '–');
+        tdHtml += '<td class="num">' + fmt + '</td>';
+      });
+      tr.innerHTML = tdHtml;
+      tbody3.appendChild(tr);
+    });
+  } else {
+    thead.innerHTML  = '<th colspan="2" style="text-align:center;">Budget</th>';
+    tbody3.innerHTML = '<tr><td colspan="2" style="text-align:center;color:var(--muted);padding:20px;">Feuille "Budget" introuvable ou vide.</td></tr>';
+  }
+}
+
+function db_esc(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
 
 </script>
 </body>
