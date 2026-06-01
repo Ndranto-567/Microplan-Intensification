@@ -197,6 +197,8 @@
     box-shadow:0 0 0 2px rgba(59,130,246,0.15);
   }
   .acteurs-table input.warn:focus { border-color:var(--warn); box-shadow:0 0 0 2px rgba(245,158,11,0.15); }
+  .acteurs-table input.field-ok  { border-color:rgba(16,185,129,0.6)!important;background:rgba(16,185,129,0.05)!important; }
+  .acteurs-table input.field-err { border-color:rgba(239,68,68,0.7)!important;background:rgba(239,68,68,0.07)!important; }
 
   /* Delete row button */
   .btn-del-row {
@@ -718,14 +720,16 @@
       <span id="ac-count" style="font-size:0.75rem;color:var(--muted);font-weight:400;margin-left:4px;">(0 acteur)</span>
     </div>
 
-    <div class="import-zone" id="import-zone"
-         onclick="document.getElementById('file-input').click()"
-         ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
-      <div class="iz-icon">📂</div>
-      <p>Glissez-déposez un fichier <strong>Excel (.xlsx, .xls)</strong> ou <span>cliquez pour importer</span></p>
-      <p style="margin-top:4px;font-size:0.75rem;">Les colonnes seront automatiquement mappées</p>
+    <div id="import-zone-wrap" style="display:none;">
+      <div class="import-zone" id="import-zone"
+           onclick="document.getElementById('file-input').click()"
+           ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
+        <div class="iz-icon">📂</div>
+        <p>Glissez-déposez un fichier <strong>Excel (.xlsx, .xls)</strong> ou <span>cliquez pour importer</span></p>
+        <p style="margin-top:4px;font-size:0.75rem;">Les colonnes seront automatiquement mappées</p>
+      </div>
+      <input type="file" id="file-input" accept=".xlsx,.xls,.csv" onchange="onFileSelect(event)">
     </div>
-    <input type="file" id="file-input" accept=".xlsx,.xls,.csv" onchange="onFileSelect(event)">
 
     <div class="upload-progress" id="upload-progress">
       <div style="font-size:0.82rem;color:var(--label);" id="upload-msg">Import en cours…</div>
@@ -822,7 +826,9 @@
       </div>
     </div>
     <div class="btn-row" style="margin-top:8px;">
-      <button class="btn btn-dash" onclick="db_load()">🔄 Actualiser le tableau de bord</button>
+      <button class="btn btn-dash"      onclick="db_load()">🔄 Actualiser</button>
+      <button class="btn btn-secondary" onclick="db_exportCSV()">⬇ Export CSV</button>
+      <button class="btn btn-secondary" onclick="db_exportExcel()">⬇ Export Excel</button>
     </div>
   </div>
 
@@ -887,7 +893,7 @@
 // ═══════════════════════════════════════════════════════
 
 
-const DEPLOY_ID = 'AKfycbz5xzeje-XSL401OVtqFJ2zHl-DvvOBbpEPzbxl-3F7vyiFolwYa6yQTA9Tmdp_7r3W2w'
+const DEPLOY_ID = 'AKfycbxmiUYbIMgSsrvXCiM13iwyIKo6UDv8r28i6jXXVOaXI-ldNy2pq0JGZZesvk6wnuEVsw'
 const GS_URL    = `https://script.google.com/macros/s/${DEPLOY_ID}/exec`;
 
 
@@ -1489,7 +1495,7 @@ function d_addActeurRow(data) {
   tr.innerHTML = `
   <td><input type="text" class="a-nom"   placeholder="Nom et prénom"    value="${data?.nom||''}"   oninput="d_updateActeursCount()"></td>
   <td><input type="text" class="a-poste" placeholder="Poste / Fonction" value="${data?.poste||''}"></td>
-  <td><input type="text" class="a-cin"   placeholder="XXX XXX XXX XXX"  value="${data?.cin||''}"   maxlength="15" onkeydown="onlyDigits(event)" oninput="formatCIN(this)"         inputmode="numeric" autocomplete="off"></td>
+  <td><input type="text" class="a-cin"   placeholder="XXX XXX XXX XXX"  value="${data?.cin||''}"   maxlength="15" oninput="formatCIN(this)" inputmode="numeric" autocomplete="off"></td>
   <td><input type="text" class="a-mvola warn" placeholder="03X XX XXX XX" value="${data?.mvola||''}" maxlength="13" onkeydown="onlyDigits(event)" oninput="formatMobileMoney(this)" inputmode="numeric" autocomplete="off"></td>
   <td><button class="btn-del-row" onclick="d_delActeurRow('${id}')">✕</button></td>
   `;
@@ -1598,7 +1604,7 @@ function r_addActeurRow(data) {
   tr.innerHTML = `
   <td><input type="text" class="a-nom"   placeholder="Nom et prénom"    value="${data?.nom||''}"   oninput="r_updateActeursCount()"></td>
   <td><input type="text" class="a-poste" placeholder="Poste / Fonction" value="${data?.poste||''}"></td>
-  <td><input type="text" class="a-cin"   placeholder="XXX XXX XXX XXX"  value="${data?.cin||''}"   maxlength="15" onkeydown="onlyDigits(event)" oninput="formatCIN(this)"         inputmode="numeric" autocomplete="off"></td>
+  <td><input type="text" class="a-cin"   placeholder="XXX XXX XXX XXX"  value="${data?.cin||''}"   maxlength="15" oninput="formatCIN(this)" inputmode="numeric" autocomplete="off"></td>
   <td><input type="text" class="a-mvola warn" placeholder="03X XX XXX XX" value="${data?.mvola||''}" maxlength="13" onkeydown="onlyDigits(event)" oninput="formatMobileMoney(this)" inputmode="numeric" autocomplete="off"></td>
   <td><button class="btn-del-row" onclick="r_delActeurRow('${id}')">✕</button></td>
   `;
@@ -1619,34 +1625,31 @@ function r_addActeurRow(data) {
   }
 }
 function formatCIN(input) {
-  // Ne garder que les chiffres
-  let v = input.value.replace(/\D/g, '');
-
-  // Limiter à 12 chiffres
-  v = v.substring(0, 12);
-
-  // Format XXX XXX XXX XXX
+  let v = input.value.replace(/\D/g, '').substring(0, 12);
   input.value = v.replace(
     /(\d{0,3})(\d{0,3})(\d{0,3})(\d{0,3})/,
     (_, a, b, c, d) => [a, b, c, d].filter(Boolean).join(' ')
   );
+  // Validation visuelle
+  const valid = /^\d{3} \d{3} \d{3} \d{3}$/.test(input.value);
+  const empty = input.value.trim() === '';
+  input.classList.toggle('field-ok',  !empty &&  valid);
+  input.classList.toggle('field-err', !empty && !valid);
 }
-  
- function formatMobileMoney(input) {
-  // Ne garder que les chiffres
-  let v = input.value.replace(/\D/g, '');
 
-  // Limiter à 10 chiffres
-  v = v.substring(0, 10);
-
+function formatMobileMoney(input) {
+  let v = input.value.replace(/\D/g, '').substring(0, 10);
   let res = '';
-
   if (v.length > 0) res += v.substring(0, 3);
   if (v.length > 3) res += ' ' + v.substring(3, 5);
   if (v.length > 5) res += ' ' + v.substring(5, 8);
   if (v.length > 8) res += ' ' + v.substring(8, 10);
-
   input.value = res;
+  // Validation visuelle
+  const valid = /^\d{3} \d{2} \d{3} \d{2}$/.test(input.value);
+  const empty = input.value.trim() === '';
+  input.classList.toggle('field-ok',  !empty &&  valid);
+  input.classList.toggle('field-err', !empty && !valid);
 }
 
   
@@ -2085,6 +2088,7 @@ async function db_load() {
 }
 
 function db_render(data) {
+  db_lastData = data; // stocker pour export
   const rows = data.budget_rows || [];
 
   // ── KPIs ──
@@ -2107,7 +2111,8 @@ function db_render(data) {
   tbody2.innerHTML = '';
   const seen = {};
   rows.forEach(function(row) {
-    const dk = (row.district || '').trim().toUpperCase();
+    // Normaliser comme norm() côté Apps Script : trim + uppercase
+    const dk = (row.district || '').trim().toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
     if (seen[dk]) return;
     seen[dk] = true;
 
@@ -2222,7 +2227,40 @@ function db_render(data) {
     });
     tbody.appendChild(tr);
   });
+  // ── Ligne total général ──
+  let totalMGA = 0, totalUSD = 0;
+  rows.forEach(function(row) {
+    const v = row.values || [];
+    if (typeof v[19] === 'number') totalMGA += v[19];
+    if (typeof v[20] === 'number') totalUSD += v[20];
+  });
+  const tfoot = document.createElement('tfoot');
+  const trTotal = document.createElement('tr');
+  trTotal.style.cssText = 'background:rgba(16,185,129,0.08);font-weight:700;';
+  // Colonne District
+  const tdLabel = document.createElement('td');
+  tdLabel.textContent = 'TOTAL RÉGION';
+  tdLabel.style.cssText = 'color:var(--accent2);font-weight:700;white-space:nowrap;';
+  trTotal.appendChild(tdLabel);
+  // Colonnes D à R vides
+  for (let i = 0; i < 19; i++) {
+    const td = document.createElement('td');
+    td.textContent = '';
+    trTotal.appendChild(td);
+  }
+  // TOTAL MGA
+  const tdMGA = document.createElement('td');
+  tdMGA.textContent = Math.round(totalMGA).toLocaleString('fr-FR');
+  tdMGA.style.cssText = 'text-align:right;font-family:JetBrains Mono,monospace;font-size:0.82rem;color:var(--accent2);font-weight:700;border-left:2px solid #2a3045;';
+  trTotal.appendChild(tdMGA);
+  // TOTAL USD
+  const tdUSD = document.createElement('td');
+  tdUSD.textContent = totalUSD.toFixed(2);
+  tdUSD.style.cssText = 'text-align:right;font-family:JetBrains Mono,monospace;font-size:0.82rem;color:var(--accent2);font-weight:700;border-left:2px solid #2a3045;';
+  trTotal.appendChild(tdUSD);
+  tfoot.appendChild(trTotal);
   budgetTable.appendChild(tbody);
+  budgetTable.appendChild(tfoot);
 }
 
 function db_esc(str) {
