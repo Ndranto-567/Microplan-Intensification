@@ -358,6 +358,23 @@
   .dash-table tr:hover td { background:rgba(14,165,233,0.04); }
   .dash-table td.center { text-align:center; }
   .dash-table td.num { text-align:right; font-family:'JetBrains Mono',monospace; font-size:0.8rem; }
+  /* Figer la première colonne du tableau budget */
+    .dash-table td:first-child,
+    .dash-table th:first-child {
+      position: sticky;
+      left: 0;
+      z-index: 2;
+      background: var(--surface);
+      box-shadow: 2px 0 4px rgba(0,0,0,0.3);
+    }
+    .dash-table thead th:first-child {
+      z-index: 3;
+      background: #0f1f44;
+    }
+    .dash-table tfoot td:first-child {
+      background: var(--surface2);
+      z-index: 2;
+    }
 
   .badge { display:inline-flex; align-items:center; justify-content:center; border-radius:6px; padding:3px 10px; font-size:0.75rem; font-weight:600; white-space:nowrap; }
   .badge-ok   { background:rgba(16,185,129,0.15); color:var(--accent2); border:1px solid rgba(16,185,129,0.3); }
