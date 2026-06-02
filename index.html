@@ -332,6 +332,41 @@
   .ac-empty { text-align:center;color:var(--muted);font-size:0.85rem;padding:32px;font-style:italic; }
   .ac-empty .ac-empty-icon { font-size:2rem;margin-bottom:8px;opacity:0.5; }
 
+  /* ── DASHBOARD ── */
+  #page-dashboard { display:none; }
+  .niveau-card.dashboard:hover { border-color:#0ea5e9; }
+  .niveau-card.dashboard .nc-title { color:#0ea5e9; }
+  .ct-dash { color:#0ea5e9; }
+  .ct-dash::before { background:#0ea5e9; }
+  .dash-summary { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; margin-bottom:20px; }
+  .dash-kpi { background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:16px; text-align:center; }
+  .dash-kpi .kpi-val { font-size:2rem; font-weight:700; font-family:'JetBrains Mono',monospace; color:#0ea5e9; }
+  .dash-kpi .kpi-label { font-size:0.75rem; color:var(--muted); margin-top:4px; }
+  .dash-kpi.warn .kpi-val { color:var(--warn); }
+  .dash-kpi.ok .kpi-val { color:var(--accent2); }
+  .dash-kpi.purple .kpi-val { color:var(--purple); }
+  .dash-table-wrap { overflow-x:auto; border-radius:10px; border:1px solid var(--border); margin-bottom:20px; }
+  .dash-table { width:100%; border-collapse:collapse; font-size:0.82rem; min-width:600px; }
+  .dash-table th { background:#1a2744; color:var(--label); font-weight:600; text-align:left; padding:10px 12px; font-size:0.73rem; text-transform:uppercase; letter-spacing:0.05em; white-space:nowrap; }
+  .dash-table th.center { text-align:center; }
+  .dash-table td { padding:8px 12px; border-bottom:1px solid var(--border); vertical-align:middle; }
+  .dash-table tr:last-child td { border-bottom:none; }
+  .dash-table tr:hover td { background:rgba(14,165,233,0.04); }
+  .dash-table td.center { text-align:center; }
+  .dash-table td.num { text-align:right; font-family:'JetBrains Mono',monospace; font-size:0.8rem; }
+  .dash-table td:first-child, .dash-table th:first-child { position:sticky; left:0; z-index:2; background:var(--surface); box-shadow:2px 0 4px rgba(0,0,0,0.3); }
+  .dash-table thead th:first-child { z-index:3; background:#0f1f44; }
+  .dash-table tfoot td:first-child { background:var(--surface2); z-index:2; }
+  .badge { display:inline-flex; align-items:center; justify-content:center; border-radius:6px; padding:3px 10px; font-size:0.75rem; font-weight:600; white-space:nowrap; }
+  .badge-ok   { background:rgba(16,185,129,0.15); color:var(--accent2); border:1px solid rgba(16,185,129,0.3); }
+  .badge-warn { background:rgba(245,158,11,0.15);  color:var(--warn);    border:1px solid rgba(245,158,11,0.3); }
+  .badge-err  { background:rgba(239,68,68,0.15);   color:var(--danger);  border:1px solid rgba(239,68,68,0.3); }
+  .badge-off  { background:rgba(100,116,139,0.15); color:var(--muted);   border:1px solid rgba(100,116,139,0.3); }
+  .dash-section-title { font-size:0.85rem; font-weight:600; color:var(--label); margin:20px 0 10px; display:flex; align-items:center; gap:8px; }
+  .dash-section-title::before { content:''; display:inline-block; width:3px; height:14px; border-radius:2px; background:#0ea5e9; }
+  .btn-dash { background:rgba(14,165,233,0.15); color:#0ea5e9; border:1px solid rgba(14,165,233,0.3); }
+  .btn-dash:hover { background:rgba(14,165,233,0.25); }
+
 </style>
 </head>
 <body>
@@ -370,6 +405,11 @@
         <div class="nc-icon">👥</div>
         <div class="nc-title">Acteurs Communautaires</div>
         <div class="nc-desc">Import et saisie des AC par district</div>
+      </div>
+      <div class="niveau-card dashboard" onclick="showPage('dashboard')">
+        <div class="nc-icon">📊</div>
+        <div class="nc-title">Tableau de Bord</div>
+        <div class="nc-desc">Suivi budgétaire et saisies par région</div>
       </div>
     </div>
   </div>
@@ -759,6 +799,49 @@
 
 </div><!-- /page-communautaire -->
 
+<!-- ============ PAGE TABLEAU DE BORD ============ -->
+<div id="page-dashboard" class="container" style="max-width:1100px;">
+  <div class="status-bar">
+    <div class="dot connected"></div>
+    <span>Google Sheet connecté – Tableau de Bord</span>
+    <button class="btn btn-back" style="margin-left:auto;padding:6px 14px;font-size:0.78rem;" onclick="showPage('home')">← Retour</button>
+  </div>
+  <div class="card">
+    <div class="card-title ct-dash">📍 Sélection de la Région</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="flabel">Région <span class="req">*</span></label>
+        <select id="db-sel-region"><option value="">— Sélectionner une région —</option></select>
+      </div>
+    </div>
+    <div class="btn-row" style="margin-top:8px;">
+      <button class="btn btn-dash"      onclick="db_load()">🔄 Actualiser</button>
+      <button class="btn btn-secondary" onclick="db_exportCSV()">⬇ Export CSV</button>
+      <button class="btn btn-secondary" onclick="db_exportExcel()">⬇ Export Excel</button>
+    </div>
+  </div>
+  <div id="db-kpis" style="display:none;">
+    <div class="dash-summary">
+      <div class="dash-kpi purple"><div class="kpi-val" id="db-kpi-emar">–</div><div class="kpi-label">Acteurs EMAR</div></div>
+      <div class="dash-kpi"><div class="kpi-val" id="db-kpi-emad">–</div><div class="kpi-label">Acteurs EMAD/CSB total</div></div>
+      <div class="dash-kpi ok"><div class="kpi-val" id="db-kpi-ac">–</div><div class="kpi-label">Acteurs Communautaires</div></div>
+      <div class="dash-kpi warn"><div class="kpi-val" id="db-kpi-manquants">–</div><div class="kpi-label">Districts prévus riposte</div></div>
+    </div>
+  </div>
+  <div id="db-suivi-wrap" style="display:none;">
+    <div class="dash-section-title">👥 Acteurs par district</div>
+    <div class="dash-table-wrap">
+      <table class="dash-table">
+        <thead><tr><th>District</th><th class="center">Saisie Budget</th><th class="center">Nb EMAD/CSB</th><th class="center">Nb AC</th></tr></thead>
+        <tbody id="db-acteurs-tbody"></tbody>
+      </table>
+    </div>
+    <div class="dash-section-title">💰 Budget par district (districts prévus pour la riposte)</div>
+    <div class="dash-table-wrap"><table class="dash-table" id="db-budget-table"></table></div>
+  </div>
+  <div id="db-empty" style="display:none;text-align:center;color:var(--muted);padding:40px;font-style:italic;">Sélectionnez une région et cliquez sur Actualiser.</div>
+</div><!-- /page-dashboard -->
+
 <div id="toast"><span id="toast-msg">Message</span></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -835,21 +918,24 @@ function showPage(page) {
   document.getElementById('page-district').style.display      = page==='district'      ? 'block' : 'none';
   document.getElementById('page-region').style.display        = page==='region'        ? 'block' : 'none';
   document.getElementById('page-communautaire').style.display = page==='communautaire' ? 'block' : 'none';
+  document.getElementById('page-dashboard').style.display     = page==='dashboard'     ? 'block' : 'none';
 
-  const icons = { home:'🦠', district:'🏥', region:'🗺', communautaire:'👥' };
+  const icons = { home:'🦠', district:'🏥', region:'🗺', communautaire:'👥', dashboard:'📊' };
   const titles = {
     home:'Microplan – Intensification/Riposte Rougeole',
     district:'Formulaire District – Riposte Rougeole',
     region:'Formulaire Région – Riposte Rougeole',
-    communautaire:'Acteurs Communautaires – Riposte Rougeole'
+    communautaire:'Acteurs Communautaires – Riposte Rougeole',
+    dashboard:'Tableau de Bord – Suivi budgétaire'
   };
   const subs = {
     home:'Sélectionnez votre niveau de saisie',
     district:'Collecte de données EMAD et CSB',
     region:'Saisie des données EMAR',
-    communautaire:'Saisie et importation des acteurs communautaires par district'
+    communautaire:'Saisie et importation des acteurs communautaires par district',
+    dashboard:'Visualisation du suivi et des budgets par région'
   };
-  const iconClasses = { home:'icon-home', district:'icon-district', region:'icon-region', communautaire:'icon-home' };
+  const iconClasses = { home:'icon-home', district:'icon-district', region:'icon-region', communautaire:'icon-home', dashboard:'icon-home' };
 
   document.getElementById('header-icon').textContent  = icons[page];
   document.getElementById('header-icon').className    = 'header-icon ' + iconClasses[page];
@@ -1691,6 +1777,9 @@ document.addEventListener('DOMContentLoaded', function() {
   // Remplir liste région AC
   var sel = document.getElementById('ac-sel-region');
   if (sel) Object.keys(REGIONS_DISTRICTS).sort().forEach(function(r) { sel.appendChild(new Option(r, r)); });
+  // Remplir liste région Dashboard
+  var sdb = document.getElementById('db-sel-region');
+  if (sdb) Object.keys(REGIONS_DISTRICTS).sort().forEach(function(r) { sdb.appendChild(new Option(r, r)); });
 });
 
 function ac_renderTable() {
@@ -1870,6 +1959,161 @@ function ac_showProgress(visible, msg, pct) {
   document.getElementById('upload-msg').textContent=msg||'';
   document.getElementById('progress-bar').style.width=(pct||0)+'%';
 }
+
+// ═══════════════════════════════════════════════════════
+//  EXPORT TABLEAU DE BORD
+// ═══════════════════════════════════════════════════════
+let db_lastData = null;
+
+function db_exportCSV() {
+  if (!db_lastData || !db_lastData.budget_rows || db_lastData.budget_rows.length === 0) { showToast("Aucune donnée. Actualisez d'abord.", 'error'); return; }
+  const region = db_lastData.region || 'REGION';
+  const headers = ['District'].concat((db_lastData.sub_headers || []).map(function(h) { return DB_ABREV[String(h)] || String(h); }));
+  const lines = [headers.join(',')];
+  db_lastData.budget_rows.forEach(function(row) {
+    const vals = ['"' + (row.district||'') + '"'].concat((row.values||[]).map(function(v) { return typeof v === 'number' ? Math.round(v) : '"' + String(v||'') + '"'; }));
+    lines.push(vals.join(','));
+  });
+  let totalMGA = 0, totalUSD = 0;
+  db_lastData.budget_rows.forEach(function(r) { if (typeof (r.values||[])[19] === 'number') totalMGA += r.values[19]; if (typeof (r.values||[])[20] === 'number') totalUSD += r.values[20]; });
+  lines.push('"TOTAL RÉGION",' + Array(19).fill('').join(',') + ',' + Math.round(totalMGA) + ',' + totalUSD.toFixed(2));
+  const blob = new Blob(['﻿' + lines.join('
+')], { type:'text/csv;charset=utf-8;' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'Budget_' + region + '_' + new Date().toISOString().slice(0,10) + '.csv'; a.click();
+  showToast('✓ Export CSV téléchargé', 'success');
+}
+
+function db_exportExcel() {
+  if (!db_lastData || !db_lastData.budget_rows || db_lastData.budget_rows.length === 0) { showToast("Aucune donnée. Actualisez d'abord.", 'error'); return; }
+  const region = db_lastData.region || 'REGION';
+  const headers = ['District'].concat((db_lastData.sub_headers || []).map(function(h) { return DB_ABREV[String(h)] || String(h); }));
+  const wsData = [headers];
+  db_lastData.budget_rows.forEach(function(row) { wsData.push([row.district].concat(row.values || [])); });
+  let totalMGA = 0, totalUSD = 0;
+  db_lastData.budget_rows.forEach(function(r) { if (typeof (r.values||[])[19] === 'number') totalMGA += r.values[19]; if (typeof (r.values||[])[20] === 'number') totalUSD += r.values[20]; });
+  wsData.push(['TOTAL RÉGION'].concat(Array(19).fill('')).concat([Math.round(totalMGA), totalUSD.toFixed(2)]));
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Budget');
+  XLSX.writeFile(wb, 'Budget_' + region + '_' + new Date().toISOString().slice(0,10) + '.xlsx');
+  showToast('✓ Export Excel téléchargé', 'success');
+}
+
+// ═══════════════════════════════════════════════════════
+//  TABLEAU DE BORD
+// ═══════════════════════════════════════════════════════
+const DB_ABREV = {
+  'NOMBRE CSB avec au-moins un cas de rougeole':'Nb CSB','Nombre de Fokontany / Secteur':'Nb Fkt',
+  'Indemnité AS CSB':'Indem. AS','Nombre AC':'Nb AC','Indemnité AC':'Indem. AC',
+  'Montant carburant SA moto CSB':'Carb. moto CSB','MONTANT Total CSB en AR':'Total CSB (Ar)',
+  'Moyen dplct ':'Déplct','Moyen dplct':'Déplct',
+  'Carburant véhicule administratif EMAD':'Carb. veh. EMAD','Montant carburant moto SDSP':'Carb. moto EMAD',
+  'Indemnités EMAD':'Indem. EMAD','Location moto district':'Loc. moto D','MONTANT Total EMAD en AR':'Total EMAD (Ar)',
+  'Carburant véhicule administratif EMAR':'Carb. veh. EMAR','Montant carburant moto DRSP':'Carb. moto EMAR',
+  'Indemnités EMAR':'Indem. EMAR','Location moto Région':'Loc. moto R','MONTANT Total EMAR en AR':'Total EMAR (Ar)',
+  'MONTANT TOTAL en AR':'TOTAL (Ar)','MONTANT USD':'Total (USD)'
+};
+
+async function db_load() {
+  const region = document.getElementById('db-sel-region').value;
+  if (!region) { showToast('Sélectionnez une région.', 'error'); return; }
+  showToast('Chargement du tableau de bord…', '');
+  try {
+    const url = GS_URL + '?action=getDashboard&region=' + encodeURIComponent(region);
+    const data = await fetch(url).then(function(r) { return r.json(); });
+    if (data.status !== 'ok') { showToast(data.message || 'Erreur.', 'error'); return; }
+    db_render(data);
+    showToast('Tableau de bord actualisé !', 'success');
+  } catch(err) { console.error(err); showToast('Erreur de connexion', 'error'); }
+}
+
+function db_render(data) {
+  db_lastData = data;
+  const rows = data.budget_rows || [];
+  document.getElementById('db-kpi-emar').textContent      = data.nb_emar      || 0;
+  document.getElementById('db-kpi-emad').textContent      = data.nb_emad      || 0;
+  document.getElementById('db-kpi-ac').textContent        = data.nb_ac        || 0;
+  document.getElementById('db-kpi-manquants').textContent = data.nb_districts || 0;
+  document.getElementById('db-kpis').style.display = 'block';
+  if (rows.length === 0) { document.getElementById('db-suivi-wrap').style.display='none'; document.getElementById('db-empty').style.display='block'; return; }
+  document.getElementById('db-suivi-wrap').style.display = 'block';
+  document.getElementById('db-empty').style.display = 'none';
+
+  // Tableau acteurs
+  const tbody2 = document.getElementById('db-acteurs-tbody');
+  tbody2.innerHTML = '';
+  const seen = {};
+  rows.forEach(function(row) {
+    const dk = (row.district || '').trim().toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+    if (seen[dk]) return; seen[dk] = true;
+    const hasSaisie = (row.values || []).some(function(v) { return typeof v === 'number' && v > 0; });
+    const bdgSaisie = hasSaisie ? '<span class="badge badge-ok">✓ Saisi</span>' : '<span class="badge badge-err">✗ Manquant</span>';
+    const nb_emad = (data.emad_per_district && data.emad_per_district[dk]) || 0;
+    const nb_ac   = (data.ac_per_district   && data.ac_per_district[dk])   || 0;
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td><strong>' + db_esc(row.district) + '</strong></td><td class="center">' + bdgSaisie + '</td><td class="center">' + nb_emad + '</td><td class="center">' + nb_ac + '</td>';
+    tbody2.appendChild(tr);
+  });
+
+  // Tableau budget
+  const budgetTable = document.getElementById('db-budget-table');
+  budgetTable.innerHTML = '';
+  const groups = data.groups || [], subHeaders = data.sub_headers || [];
+  const thead = document.createElement('thead'), tr1 = document.createElement('tr');
+  const thD = document.createElement('th'); thD.textContent='District'; thD.rowSpan=2; thD.style.cssText='background:#0f1f44;color:#fff;vertical-align:middle;'; tr1.appendChild(thD);
+  const groupColors = ['#1a3a5c','#1a2a4a','#0f2233'];
+  let gi = 0;
+  groups.forEach(function(g) {
+    if (!g.label) return;
+    const th = document.createElement('th'); th.textContent=g.label; th.colSpan=g.span;
+    th.style.cssText='text-align:center;background:'+(groupColors[gi]||'#1a3a5c')+';color:#e2e8f0;border-left:2px solid #2a3045;';
+    tr1.appendChild(th); gi++;
+  });
+  for (let wx=0; wx<2; wx++) {
+    const th = document.createElement('th'); th.rowSpan=2;
+    th.style.cssText='background:#1a2744;color:#e2e8f0;vertical-align:middle;text-align:center;border-left:2px solid #2a3045;white-space:nowrap;font-size:0.7rem;';
+    const idx = wx===0?19:20; const lbl=String(subHeaders[idx]||''); th.textContent=DB_ABREV[lbl]||lbl; tr1.appendChild(th);
+  }
+  thead.appendChild(tr1);
+  const tr2 = document.createElement('tr');
+  subHeaders.forEach(function(h, i) {
+    if (i>=19) return;
+    const th=document.createElement('th'); const label=String(h||''); th.textContent=DB_ABREV[label]||label;
+    th.style.cssText='white-space:nowrap;font-size:0.7rem;text-align:center;';
+    if (i===7||i===13) th.style.borderLeft='2px solid #2a3045'; tr2.appendChild(th);
+  });
+  thead.appendChild(tr2); budgetTable.appendChild(thead);
+
+  const tbody = document.createElement('tbody');
+  rows.forEach(function(row) {
+    const tr = document.createElement('tr');
+    const tdD = document.createElement('td'); tdD.innerHTML='<strong>'+db_esc(row.district)+'</strong>'; tr.appendChild(tdD);
+    row.values.forEach(function(val, i) {
+      const td = document.createElement('td');
+      if (i===7||i===13) td.style.borderLeft='2px solid #2a3045';
+      if (i===7||i===13) { const v=String(val||'').trim().toUpperCase(); td.style.textAlign='center'; td.textContent=v==='V'?'🚗':v==='M'?'🏍':'–'; }
+      else if (typeof val==='number'&&val!==0) { td.style.cssText='text-align:right;font-family:JetBrains Mono,monospace;font-size:0.78rem;'; td.textContent=Math.round(val).toLocaleString('fr-FR'); }
+      else if (val===0||val==='') { td.style.cssText='text-align:right;color:var(--muted);font-size:0.78rem;'; td.textContent='–'; }
+      else { td.style.cssText='text-align:right;font-size:0.78rem;'; td.textContent=String(val); }
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+
+  let totalMGA=0, totalUSD=0;
+  rows.forEach(function(row) { const v=row.values||[]; if(typeof v[19]==='number')totalMGA+=v[19]; if(typeof v[20]==='number')totalUSD+=v[20]; });
+  const tfoot=document.createElement('tfoot'), trTotal=document.createElement('tr');
+  trTotal.style.cssText='background:rgba(16,185,129,0.08);font-weight:700;';
+  const tdLabel=document.createElement('td'); tdLabel.textContent='TOTAL RÉGION'; tdLabel.style.cssText='color:var(--accent2);font-weight:700;white-space:nowrap;'; trTotal.appendChild(tdLabel);
+  for(let i=0;i<19;i++){const td=document.createElement('td');td.textContent='';trTotal.appendChild(td);}
+  const tdMGA=document.createElement('td'); tdMGA.textContent=Math.round(totalMGA).toLocaleString('fr-FR'); tdMGA.style.cssText='text-align:right;font-family:JetBrains Mono,monospace;font-size:0.82rem;color:var(--accent2);font-weight:700;border-left:2px solid #2a3045;'; trTotal.appendChild(tdMGA);
+  const tdUSD=document.createElement('td'); tdUSD.textContent=totalUSD.toFixed(2); tdUSD.style.cssText='text-align:right;font-family:JetBrains Mono,monospace;font-size:0.82rem;color:var(--accent2);font-weight:700;border-left:2px solid #2a3045;'; trTotal.appendChild(tdUSD);
+  tfoot.appendChild(trTotal); budgetTable.appendChild(tbody); budgetTable.appendChild(tfoot);
+}
+
+function db_esc(str) { return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
 
 </script>
 </body>
