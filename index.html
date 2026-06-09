@@ -878,6 +878,24 @@
 
   <div id="db-suivi-wrap" style="display:none;">
 
+    <div class="dash-section-title">⚠️ Districts sans liste d'acteurs</div>
+    <div class="dash-table-wrap" id="db-manquants-wrap">
+      <table class="dash-table" id="db-manquants-table">
+        <thead>
+          <tr>
+            <th>Région</th>
+            <th>District</th>
+            <th class="center">Acteurs District</th>
+            <th class="center">Acteurs Communautaires</th>
+          </tr>
+        </thead>
+        <tbody id="db-manquants-tbody"></tbody>
+      </table>
+      <div id="db-manquants-empty" style="display:none;text-align:center;padding:20px;font-size:0.85rem;color:var(--accent2);">
+        ✅ Tous les districts ont des listes d'acteurs complètes.
+      </div>
+    </div>
+
     <div class="dash-section-title">👥 Acteurs par district</div>
     <div class="dash-table-wrap">
       <table class="dash-table">
@@ -1136,18 +1154,44 @@ async function d_submit() {
   // ── Collecter les acteurs MAINTENANT, avant tout clear ──
   const acteurs = d_getActeurs();
 
-  // ── Vérifier CIN et Mvola des acteurs ──
+  // ── Vérifier et signaler les cellules vides / invalides dans le tableau acteurs ──
   const erreursActeurs = [];
-  acteurs.forEach(function(a, i) {
-    const num = i + 1, nom = a.nom || '(sans nom)';
-    if (!a.cin) erreursActeurs.push('Acteur ' + num + ' – ' + nom + ' : CIN manquant.');
-    else if (!REGEX_CIN.test(a.cin)) erreursActeurs.push('Acteur ' + num + ' – ' + nom + ' : CIN invalide "' + a.cin + '".');
-    if (!a.mvola) erreursActeurs.push('Acteur ' + num + ' – ' + nom + ' : Mobile Money manquant.');
-    else if (!REGEX_TEL.test(a.mvola)) erreursActeurs.push('Acteur ' + num + ' – ' + nom + ' : Mobile Money invalide "' + a.mvola + '".');
+  document.querySelectorAll('#d-acteurs-tbody tr:not(#d-acteurs-empty)').forEach(function(tr, i) {
+    const num  = i + 1;
+    const nom  = tr.querySelector('.a-nom');
+    const poste= tr.querySelector('.a-poste');
+    const cin  = tr.querySelector('.a-cin');
+    const mvola= tr.querySelector('.a-mvola');
+    const nomV  = nom?.value.trim()   || '';
+    const posteV= poste?.value.trim() || '';
+    const cinV  = cin?.value.trim()   || '';
+    const mvolaV= mvola?.value.trim() || '';
+    if (!nomV) {
+      nom?.classList.add('field-err'); nom?.setAttribute('title','Champ requis');
+      erreursActeurs.push('Ligne ' + num + ' : Nom manquant.');
+    } else { nom?.classList.remove('field-err'); }
+    if (!posteV) {
+      poste?.classList.add('field-err'); poste?.setAttribute('title','Champ requis');
+      erreursActeurs.push('Ligne ' + num + ' (' + nomV + ') : Poste manquant.');
+    } else { poste?.classList.remove('field-err'); }
+    if (!cinV) {
+      cin?.classList.add('field-err'); cin?.setAttribute('title','CIN requis');
+      erreursActeurs.push('Ligne ' + num + ' (' + nomV + ') : CIN manquant.');
+    } else if (!REGEX_CIN.test(cinV)) {
+      cin?.classList.add('field-err');
+      erreursActeurs.push('Ligne ' + num + ' (' + nomV + ') : CIN invalide "' + cinV + '".');
+    }
+    if (!mvolaV) {
+      mvola?.classList.add('field-err'); mvola?.setAttribute('title','Mobile Money requis');
+      erreursActeurs.push('Ligne ' + num + ' (' + nomV + ') : Mobile Money manquant.');
+    } else if (!REGEX_TEL.test(mvolaV)) {
+      mvola?.classList.add('field-err');
+      erreursActeurs.push('Ligne ' + num + ' (' + nomV + ') : Mobile Money invalide "' + mvolaV + '".');
+    }
   });
   if (erreursActeurs.length > 0) {
-    showToast('⚠ ' + erreursActeurs.length + ' erreur(s) dans les acteurs — corrigez avant d\'enregistrer.', 'error');
-    alert('Erreurs à corriger :\n\n' + erreursActeurs.slice(0, 10).join('\n') + (erreursActeurs.length > 10 ? '\n\n… et ' + (erreursActeurs.length - 10) + ' autre(s).' : ''));
+    showToast('⚠ ' + erreursActeurs.length + ' cellule(s) à corriger avant d\'enregistrer.', 'error');
+    alert('Cellules à corriger :\n\n' + erreursActeurs.slice(0, 10).join('\n') + (erreursActeurs.length > 10 ? '\n\n… et ' + (erreursActeurs.length - 10) + ' autre(s).' : ''));
     return;
   }
 
@@ -1352,18 +1396,44 @@ async function r_submit() {
   // ── Collecter les acteurs MAINTENANT, avant tout clear ──
   const acteurs = r_getActeurs();
 
-  // ── Vérifier CIN et Mvola des acteurs ──
+  // ── Vérifier et signaler les cellules vides / invalides dans le tableau acteurs ──
   const erreursActeurs = [];
-  acteurs.forEach(function(a, i) {
-    const num = i + 1, nom = a.nom || '(sans nom)';
-    if (!a.cin) erreursActeurs.push('Acteur ' + num + ' – ' + nom + ' : CIN manquant.');
-    else if (!REGEX_CIN.test(a.cin)) erreursActeurs.push('Acteur ' + num + ' – ' + nom + ' : CIN invalide "' + a.cin + '".');
-    if (!a.mvola) erreursActeurs.push('Acteur ' + num + ' – ' + nom + ' : Mobile Money manquant.');
-    else if (!REGEX_TEL.test(a.mvola)) erreursActeurs.push('Acteur ' + num + ' – ' + nom + ' : Mobile Money invalide "' + a.mvola + '".');
+  document.querySelectorAll('#r-acteurs-tbody tr:not(#r-acteurs-empty)').forEach(function(tr, i) {
+    const num  = i + 1;
+    const nom  = tr.querySelector('.a-nom');
+    const poste= tr.querySelector('.a-poste');
+    const cin  = tr.querySelector('.a-cin');
+    const mvola= tr.querySelector('.a-mvola');
+    const nomV  = nom?.value.trim()   || '';
+    const posteV= poste?.value.trim() || '';
+    const cinV  = cin?.value.trim()   || '';
+    const mvolaV= mvola?.value.trim() || '';
+    if (!nomV) {
+      nom?.classList.add('field-err'); nom?.setAttribute('title','Champ requis');
+      erreursActeurs.push('Ligne ' + num + ' : Nom manquant.');
+    } else { nom?.classList.remove('field-err'); }
+    if (!posteV) {
+      poste?.classList.add('field-err'); poste?.setAttribute('title','Champ requis');
+      erreursActeurs.push('Ligne ' + num + ' (' + nomV + ') : Poste manquant.');
+    } else { poste?.classList.remove('field-err'); }
+    if (!cinV) {
+      cin?.classList.add('field-err'); cin?.setAttribute('title','CIN requis');
+      erreursActeurs.push('Ligne ' + num + ' (' + nomV + ') : CIN manquant.');
+    } else if (!REGEX_CIN.test(cinV)) {
+      cin?.classList.add('field-err');
+      erreursActeurs.push('Ligne ' + num + ' (' + nomV + ') : CIN invalide "' + cinV + '".');
+    }
+    if (!mvolaV) {
+      mvola?.classList.add('field-err'); mvola?.setAttribute('title','Mobile Money requis');
+      erreursActeurs.push('Ligne ' + num + ' (' + nomV + ') : Mobile Money manquant.');
+    } else if (!REGEX_TEL.test(mvolaV)) {
+      mvola?.classList.add('field-err');
+      erreursActeurs.push('Ligne ' + num + ' (' + nomV + ') : Mobile Money invalide "' + mvolaV + '".');
+    }
   });
   if (erreursActeurs.length > 0) {
-    showToast('⚠ ' + erreursActeurs.length + ' erreur(s) dans les acteurs — corrigez avant d\'enregistrer.', 'error');
-    alert('Erreurs à corriger :\n\n' + erreursActeurs.slice(0, 10).join('\n') + (erreursActeurs.length > 10 ? '\n\n… et ' + (erreursActeurs.length - 10) + ' autre(s).' : ''));
+    showToast('⚠ ' + erreursActeurs.length + ' cellule(s) à corriger avant d\'enregistrer.', 'error');
+    alert('Cellules à corriger :\n\n' + erreursActeurs.slice(0, 10).join('\n') + (erreursActeurs.length > 10 ? '\n\n… et ' + (erreursActeurs.length - 10) + ' autre(s).' : ''));
     return;
   }
 
@@ -1938,6 +2008,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!text) return;
     var lines = text.split('\n').filter(function(l) { return l.trim(); });
     if (!lines.length) return;
+    var pasteErrors = [];
     var firstLineLower = ac_normalizeKey(lines[0]);
     if (firstLineLower.includes('nom') || firstLineLower.includes('csb')) {
       var headers = lines[0].split('\t').map(function(h) { return h.trim(); });
@@ -1947,13 +2018,42 @@ document.addEventListener('DOMContentLoaded', function() {
         return row;
       });
       var mapped = ac_mapExcelRows(dataLines);
-      if (mapped.length) { ac_rows = ac_rows.concat(mapped); ac_renderTable(); showToast('✓ ' + mapped.length + ' ligne(s) collée(s)', 'success'); e.preventDefault(); return; }
+      if (mapped.length) {
+        mapped.forEach(function(r, idx) {
+          var ct = parseAndFormatCIN(r.cin);
+          var mt = parseAndFormatMvola(r.mvola);
+          if (ct.error)  pasteErrors.push('Ligne '+(idx+2)+' ('+( r.nom||'?')+') – '+ct.error);
+          if (mt.error)  pasteErrors.push('Ligne '+(idx+2)+' ('+(r.nom||'?')+') – '+mt.error);
+        });
+        ac_rows = ac_rows.concat(mapped); ac_renderTable();
+        if (pasteErrors.length > 0) {
+          showToast('⚠ ' + mapped.length + ' ligne(s) collée(s) — ' + pasteErrors.length + ' erreur(s) à corriger', 'error');
+          console.warn('Erreurs AC :\n' + pasteErrors.join('\n'));
+        } else {
+          showToast('✓ ' + mapped.length + ' ligne(s) collée(s) et formatée(s)', 'success');
+        }
+        e.preventDefault(); return;
+      }
     }
-    var newRows = lines.map(function(line) {
+    // Collage sans en-tête : CSB, Fokontany, Nom, Poste, CIN, Mvola
+    var newRows = lines.map(function(line, lineIdx) {
       var cols = line.split('\t');
-      return { _id:++ac_rowIdCounter, csb:(cols[0]||'').trim(), fokontany:(cols[1]||'').trim(), nom:(cols[2]||'').trim(), poste:(cols[3]||'').trim(), cin:(cols[4]||'').trim(), mvola:(cols[5]||'').trim() };
+      var cinR = parseAndFormatCIN((cols[4]||'').trim());
+      var mvR  = parseAndFormatMvola((cols[5]||'').trim());
+      if (cinR.error) pasteErrors.push('Ligne '+(lineIdx+1)+' ('+(cols[2]||'?').trim()+') – '+cinR.error);
+      if (mvR.error)  pasteErrors.push('Ligne '+(lineIdx+1)+' ('+(cols[2]||'?').trim()+') – '+mvR.error);
+      return { _id:++ac_rowIdCounter, csb:(cols[0]||'').trim(), fokontany:(cols[1]||'').trim(), nom:(cols[2]||'').trim(), poste:(cols[3]||'').trim(), cin:cinR.value, mvola:mvR.value };
     }).filter(function(r) { return r.nom || r.csb; });
-    if (newRows.length) { ac_rows = ac_rows.concat(newRows); ac_renderTable(); showToast('✓ ' + newRows.length + ' ligne(s) collée(s)', 'success'); e.preventDefault(); }
+    if (newRows.length) {
+      ac_rows = ac_rows.concat(newRows); ac_renderTable();
+      if (pasteErrors.length > 0) {
+        showToast('⚠ ' + newRows.length + ' ligne(s) collée(s) — ' + pasteErrors.length + ' erreur(s) à corriger', 'error');
+        console.warn('Erreurs AC :\n' + pasteErrors.join('\n'));
+      } else {
+        showToast('✓ ' + newRows.length + ' ligne(s) collée(s) et formatée(s)', 'success');
+      }
+      e.preventDefault();
+    }
   });
   // Remplir liste région AC
   var sel = document.getElementById('ac-sel-region');
@@ -2099,10 +2199,41 @@ function ac_validate() {
 
 async function submitData() {
   if (!ac_validate()) return;
-  var erreursFormat = ac_validateFormat();
+
+  // ── Vérifier et signaler visuellement toutes les cellules vides / invalides ──
+  var erreursFormat = [];
+  document.querySelectorAll('#ac-tbody tr:not(#ac-empty-row)').forEach(function(tr, i) {
+    var num = i + 1;
+    var fCsb  = tr.querySelector('.f-csb');
+    var fFkt  = tr.querySelector('.f-fkt');
+    var fNom  = tr.querySelector('.f-nom');
+    var fCin  = tr.querySelector('.f-cin');
+    var fMv   = tr.querySelector('.f-mvola');
+    var csbV  = fCsb?.value.trim()  || '';
+    var fktV  = fFkt?.value.trim()  || '';
+    var nomV  = fNom?.value.trim()  || '';
+    var cinV  = fCin?.value.trim()  || '';
+    var mvV   = fMv?.value.trim()   || '';
+    if (!csbV)  { fCsb?.classList.add('field-err');  fCsb?.setAttribute('title','CSB requis');          erreursFormat.push('Ligne '+num+' : CSB manquant.'); }
+    else        { fCsb?.classList.remove('field-err'); }
+    if (!fktV)  { fFkt?.classList.add('field-err');  fFkt?.setAttribute('title','Fokontany requis');    erreursFormat.push('Ligne '+num+' : Fokontany manquant.'); }
+    else        { fFkt?.classList.remove('field-err'); }
+    if (!nomV)  { fNom?.classList.add('field-err');  fNom?.setAttribute('title','Nom requis');          erreursFormat.push('Ligne '+num+' : Nom manquant.'); }
+    else        { fNom?.classList.remove('field-err'); }
+    if (!cinV)  { fCin?.classList.add('field-err');  fCin?.setAttribute('title','CIN requis');
+                  erreursFormat.push('Ligne '+num+' ('+nomV+') : CIN manquant.'); }
+    else if (!REGEX_CIN.test(cinV)) { fCin?.classList.add('field-err');
+                  erreursFormat.push('Ligne '+num+' ('+nomV+') : CIN invalide "'+cinV+'".'); }
+    else        { fCin?.classList.remove('field-err'); }
+    if (!mvV)   { fMv?.classList.add('field-err');   fMv?.setAttribute('title','Mobile Money requis');
+                  erreursFormat.push('Ligne '+num+' ('+nomV+') : Mobile Money manquant.'); }
+    else if (!REGEX_TEL.test(mvV)) { fMv?.classList.add('field-err');
+                  erreursFormat.push('Ligne '+num+' ('+nomV+') : Mobile Money invalide "'+mvV+'".'); }
+    else        { fMv?.classList.remove('field-err'); }
+  });
   if (erreursFormat.length > 0) {
-    showToast('⚠️ '+erreursFormat.length+' erreur(s) de format.','error');
-    alert('Erreurs de format :\n\n'+erreursFormat.slice(0,10).join('\n')+(erreursFormat.length>10?'\n\n… et '+(erreursFormat.length-10)+' autre(s).':''));
+    showToast('⚠ ' + erreursFormat.length + ' cellule(s) à corriger avant d\'enregistrer.', 'error');
+    alert('Cellules à corriger :\n\n' + erreursFormat.slice(0,10).join('\n') + (erreursFormat.length>10 ? '\n\n… et '+(erreursFormat.length-10)+' autre(s).' : ''));
     return;
   }
   var region=document.getElementById('ac-sel-region').value, district=document.getElementById('ac-sel-district').value;
@@ -2230,6 +2361,35 @@ function db_render(data) {
   }
   document.getElementById('db-suivi-wrap').style.display = 'block';
   document.getElementById('db-empty').style.display = 'none';
+
+  // ── Tableau districts sans acteurs ──
+  const tbodyM = document.getElementById('db-manquants-tbody');
+  const emptyM = document.getElementById('db-manquants-empty');
+  tbodyM.innerHTML = '';
+  const tousDistricts = data.tous_districts || [];
+  const manquants = tousDistricts.filter(function(d) { return d.sans_emad || d.sans_ac; });
+  if (manquants.length === 0) {
+    tbodyM.style.display = 'none';
+    emptyM.style.display = 'block';
+  } else {
+    tbodyM.style.display = '';
+    emptyM.style.display = 'none';
+    manquants.forEach(function(d) {
+      const tr = document.createElement('tr');
+      const emadBadge = d.sans_emad
+        ? '<span class="badge badge-err">✗ Manquant</span>'
+        : '<span class="badge badge-ok">✓ ' + d.nb_emad + ' acteur(s)</span>';
+      const acBadge = d.sans_ac
+        ? '<span class="badge badge-err">✗ Manquant</span>'
+        : '<span class="badge badge-ok">✓ ' + d.nb_ac + ' acteur(s)</span>';
+      tr.innerHTML =
+        '<td style="color:var(--muted);font-size:0.82rem;">' + db_esc(data.region) + '</td>' +
+        '<td><strong>' + db_esc(d.district) + '</strong></td>' +
+        '<td class="center">' + emadBadge + '</td>' +
+        '<td class="center">' + acBadge   + '</td>';
+      tbodyM.appendChild(tr);
+    });
+  }
 
   // ── Tableau acteurs (dédupliqué par district) ──
   const tbody2 = document.getElementById('db-acteurs-tbody');
@@ -2396,26 +2556,39 @@ function db_esc(str) {
 // ═══════════════════════════════════════════════════════
 //  COPIER-COLLER – ACTEURS DISTRICT
 // ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
+//  COPIER-COLLER – ACTEURS DISTRICT
+// ═══════════════════════════════════════════════════════
 function d_onPaste(e) {
   const text = (e.clipboardData || window.clipboardData).getData('text');
   if (!text) return;
   const lines = text.split('\n').filter(function(l) { return l.trim(); });
   if (!lines.length) return;
   let added = 0;
-  lines.forEach(function(line) {
+  const pasteErrors = [];
+  lines.forEach(function(line, lineIdx) {
     const cols = line.split('\t');
-    if (!cols[0] && !cols[1]) return; // ligne vide
+    if (!cols[0] && !cols[1]) return;
+    const cinResult   = parseAndFormatCIN((cols[2] || '').trim());
+    const mvolaResult = parseAndFormatMvola((cols[3] || '').trim());
+    if (cinResult.error)   pasteErrors.push('Ligne ' + (lineIdx+1) + ' (' + (cols[0]||'?').trim() + ') – ' + cinResult.error);
+    if (mvolaResult.error) pasteErrors.push('Ligne ' + (lineIdx+1) + ' (' + (cols[0]||'?').trim() + ') – ' + mvolaResult.error);
     const row = {
       nom:   (cols[0] || '').trim(),
       poste: (cols[1] || '').trim(),
-      cin:   (cols[2] || '').trim(),
-      mvola: (cols[3] || '').trim()
+      cin:   cinResult.value,
+      mvola: mvolaResult.value
     };
     if (row.nom || row.poste) { d_addActeurRow(row); added++; }
   });
   if (added > 0) {
-    showToast('✓ ' + added + ' ligne(s) collée(s)', 'success');
     e.preventDefault();
+    if (pasteErrors.length > 0) {
+      showToast('⚠ ' + added + ' ligne(s) collée(s) — ' + pasteErrors.length + ' erreur(s) à corriger', 'error');
+      console.warn('Erreurs district :\n' + pasteErrors.join('\n'));
+    } else {
+      showToast('✓ ' + added + ' ligne(s) collée(s) et formatée(s)', 'success');
+    }
   }
 }
 
@@ -2428,20 +2601,30 @@ function r_onPaste(e) {
   const lines = text.split('\n').filter(function(l) { return l.trim(); });
   if (!lines.length) return;
   let added = 0;
-  lines.forEach(function(line) {
+  const pasteErrors = [];
+  lines.forEach(function(line, lineIdx) {
     const cols = line.split('\t');
     if (!cols[0] && !cols[1]) return;
+    const cinResult   = parseAndFormatCIN((cols[2] || '').trim());
+    const mvolaResult = parseAndFormatMvola((cols[3] || '').trim());
+    if (cinResult.error)   pasteErrors.push('Ligne ' + (lineIdx+1) + ' (' + (cols[0]||'?').trim() + ') – ' + cinResult.error);
+    if (mvolaResult.error) pasteErrors.push('Ligne ' + (lineIdx+1) + ' (' + (cols[0]||'?').trim() + ') – ' + mvolaResult.error);
     const row = {
       nom:   (cols[0] || '').trim(),
       poste: (cols[1] || '').trim(),
-      cin:   (cols[2] || '').trim(),
-      mvola: (cols[3] || '').trim()
+      cin:   cinResult.value,
+      mvola: mvolaResult.value
     };
     if (row.nom || row.poste) { r_addActeurRow(row); added++; }
   });
   if (added > 0) {
-    showToast('✓ ' + added + ' ligne(s) collée(s)', 'success');
     e.preventDefault();
+    if (pasteErrors.length > 0) {
+      showToast('⚠ ' + added + ' ligne(s) collée(s) — ' + pasteErrors.length + ' erreur(s) à corriger', 'error');
+      console.warn('Erreurs région :\n' + pasteErrors.join('\n'));
+    } else {
+      showToast('✓ ' + added + ' ligne(s) collée(s) et formatée(s)', 'success');
+    }
   }
 }
 
