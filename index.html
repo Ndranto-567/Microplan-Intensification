@@ -338,6 +338,13 @@
   #page-dashboard { display:none; }
   .niveau-card.dashboard:hover { border-color:#0ea5e9; }
   .niveau-card.dashboard .nc-title { color:#0ea5e9; }
+  .niveau-card.central:hover { border-color:#f97316; }
+  .niveau-card.central .nc-title { color:#f97316; }
+  #page-central { display:none; }
+  .ct-central { color:#f97316; }
+  .ct-central::before { background:#f97316; }
+  .btn-central { background:#f97316; color:#fff; }
+  .btn-central:hover { background:#ea6c0a; transform:translateY(-1px); }
   .ct-dash { color:#0ea5e9; }
   .ct-dash::before { background:#0ea5e9; }
 
@@ -430,6 +437,11 @@
         <div class="nc-icon">📊</div>
         <div class="nc-title">Tableau de Bord</div>
         <div class="nc-desc">Suivi budgétaire et saisies par région</div>
+      </div>
+      <div class="niveau-card central" onclick="showPage('central')">
+        <div class="nc-icon">🏛</div>
+        <div class="nc-title">Niveau Central</div>
+        <div class="nc-desc">Suivi national des acteurs manquants</div>
       </div>
     </div>
   </div>
@@ -878,24 +890,6 @@
 
   <div id="db-suivi-wrap" style="display:none;">
 
-    <div class="dash-section-title">⚠️ Districts sans liste d'acteurs</div>
-    <div class="dash-table-wrap" id="db-manquants-wrap">
-      <table class="dash-table" id="db-manquants-table">
-        <thead>
-          <tr>
-            <th>Région</th>
-            <th>District</th>
-            <th class="center">Acteurs District</th>
-            <th class="center">Acteurs Communautaires</th>
-          </tr>
-        </thead>
-        <tbody id="db-manquants-tbody"></tbody>
-      </table>
-      <div id="db-manquants-empty" style="display:none;text-align:center;padding:20px;font-size:0.85rem;color:var(--accent2);">
-        ✅ Tous les districts ont des listes d'acteurs complètes.
-      </div>
-    </div>
-
     <div class="dash-section-title">👥 Acteurs par district</div>
     <div class="dash-table-wrap">
       <table class="dash-table">
@@ -923,6 +917,77 @@
   </div>
 
 </div><!-- /page-dashboard -->
+
+<!-- ============ PAGE NIVEAU CENTRAL ============ -->
+<div id="page-central" class="container" style="max-width:1000px;">
+
+  <div class="status-bar">
+    <div class="dot connected"></div>
+    <span>Google Sheet connecté – Niveau Central</span>
+    <button class="btn btn-back" style="margin-left:auto;padding:6px 14px;font-size:0.78rem;" onclick="showPage('home')">← Retour</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title ct-central">🏛 Suivi National – Acteurs manquants</div>
+    <p style="font-size:0.85rem;color:var(--label);margin-bottom:16px;">
+      Liste de tous les districts ayant effectué une saisie mais n'ayant pas encore intégré de liste d'acteurs district ou d'acteurs communautaires.
+    </p>
+    <div class="btn-row">
+      <button class="btn btn-central" onclick="central_load()">🔄 Actualiser</button>
+      <button class="btn btn-secondary" onclick="central_exportCSV()">⬇ Export CSV</button>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div id="central-kpis" style="display:none;">
+    <div class="dash-summary">
+      <div class="dash-kpi">
+        <div class="kpi-val" id="central-kpi-total">–</div>
+        <div class="kpi-label">Districts saisis</div>
+      </div>
+      <div class="dash-kpi warn">
+        <div class="kpi-val" id="central-kpi-sans-emad">–</div>
+        <div class="kpi-label">Sans acteurs district</div>
+      </div>
+      <div class="dash-kpi warn">
+        <div class="kpi-val" id="central-kpi-sans-ac">–</div>
+        <div class="kpi-label">Sans acteurs communautaires</div>
+      </div>
+      <div class="dash-kpi ok">
+        <div class="kpi-val" id="central-kpi-complets">–</div>
+        <div class="kpi-label">Districts complets</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tableau -->
+  <div id="central-wrap" style="display:none;">
+    <div class="dash-section-title">⚠️ Districts avec acteurs manquants</div>
+    <div class="dash-table-wrap">
+      <table class="dash-table">
+        <thead>
+          <tr>
+            <th>Région</th>
+            <th>District</th>
+            <th class="center">Acteurs District</th>
+            <th class="center">Acteurs Communautaires</th>
+            <th class="center">Statut</th>
+          </tr>
+        </thead>
+        <tbody id="central-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="central-empty" style="display:none;text-align:center;color:var(--muted);padding:40px;font-style:italic;">
+    Cliquez sur Actualiser pour charger les données.
+  </div>
+  <div id="central-ok" style="display:none;text-align:center;padding:32px;">
+    <div style="font-size:2rem;margin-bottom:8px;">✅</div>
+    <div style="color:var(--accent2);font-weight:600;">Tous les districts ayant fait une saisie ont des listes d'acteurs complètes.</div>
+  </div>
+
+</div><!-- /page-central -->
 
 <div id="toast"><span id="toast-msg">Message</span></div>
 
@@ -1001,23 +1066,26 @@ function showPage(page) {
   document.getElementById('page-region').style.display        = page==='region'        ? 'block' : 'none';
   document.getElementById('page-communautaire').style.display = page==='communautaire' ? 'block' : 'none';
   document.getElementById('page-dashboard').style.display     = page==='dashboard'     ? 'block' : 'none';
+  document.getElementById('page-central').style.display       = page==='central'       ? 'block' : 'none';
 
-  const icons = { home:'🦠', district:'🏥', region:'🗺', communautaire:'👥', dashboard:'📊' };
+  const icons = { home:'🦠', district:'🏥', region:'🗺', communautaire:'👥', dashboard:'📊', central:'🏛' };
   const titles = {
     home:'Microplan – Intensification/Riposte Rougeole',
     district:'Formulaire District – Riposte Rougeole',
     region:'Formulaire Région – Riposte Rougeole',
     communautaire:'Acteurs Communautaires – Riposte Rougeole',
-    dashboard:'Tableau de Bord – Suivi budgétaire'
+    dashboard:'Tableau de Bord – Suivi budgétaire',
+    central:'Niveau Central – Suivi national'
   };
   const subs = {
     home:'Sélectionnez votre niveau de saisie',
     district:'Collecte de données EMAD et CSB',
     region:'Saisie des données EMAR',
     communautaire:'Saisie et importation des acteurs communautaires par district',
-    dashboard:'Visualisation du suivi et des budgets par région'
+    dashboard:'Visualisation du suivi et des budgets par région',
+    central:'Districts avec acteurs manquants — toutes régions'
   };
-  const iconClasses = { home:'icon-home', district:'icon-district', region:'icon-region', communautaire:'icon-home', dashboard:'icon-home' };
+  const iconClasses = { home:'icon-home', district:'icon-district', region:'icon-region', communautaire:'icon-home', dashboard:'icon-home', central:'icon-home' };
 
   document.getElementById('header-icon').textContent  = icons[page];
   document.getElementById('header-icon').className    = 'header-icon ' + iconClasses[page];
@@ -2362,35 +2430,6 @@ function db_render(data) {
   document.getElementById('db-suivi-wrap').style.display = 'block';
   document.getElementById('db-empty').style.display = 'none';
 
-  // ── Tableau districts sans acteurs ──
-  const tbodyM = document.getElementById('db-manquants-tbody');
-  const emptyM = document.getElementById('db-manquants-empty');
-  tbodyM.innerHTML = '';
-  const tousDistricts = data.tous_districts || [];
-  const manquants = tousDistricts.filter(function(d) { return d.sans_emad || d.sans_ac; });
-  if (manquants.length === 0) {
-    tbodyM.style.display = 'none';
-    emptyM.style.display = 'block';
-  } else {
-    tbodyM.style.display = '';
-    emptyM.style.display = 'none';
-    manquants.forEach(function(d) {
-      const tr = document.createElement('tr');
-      const emadBadge = d.sans_emad
-        ? '<span class="badge badge-err">✗ Manquant</span>'
-        : '<span class="badge badge-ok">✓ ' + d.nb_emad + ' acteur(s)</span>';
-      const acBadge = d.sans_ac
-        ? '<span class="badge badge-err">✗ Manquant</span>'
-        : '<span class="badge badge-ok">✓ ' + d.nb_ac + ' acteur(s)</span>';
-      tr.innerHTML =
-        '<td style="color:var(--muted);font-size:0.82rem;">' + db_esc(data.region) + '</td>' +
-        '<td><strong>' + db_esc(d.district) + '</strong></td>' +
-        '<td class="center">' + emadBadge + '</td>' +
-        '<td class="center">' + acBadge   + '</td>';
-      tbodyM.appendChild(tr);
-    });
-  }
-
   // ── Tableau acteurs (dédupliqué par district) ──
   const tbody2 = document.getElementById('db-acteurs-tbody');
   tbody2.innerHTML = '';
@@ -2626,6 +2665,86 @@ function r_onPaste(e) {
       showToast('✓ ' + added + ' ligne(s) collée(s) et formatée(s)', 'success');
     }
   }
+}
+
+// ═══════════════════════════════════════════════════════
+//  NIVEAU CENTRAL – Suivi national acteurs manquants
+// ═══════════════════════════════════════════════════════
+var central_lastData = [];
+
+async function central_load() {
+  showToast('⏳ Chargement des données nationales…', '');
+  try {
+    const url = GS_URL + '?action=getCentral';
+    const data = await fetch(url).then(function(r) { return r.json(); });
+    if (data.status !== 'ok') { showToast(data.message || 'Erreur.', 'error'); return; }
+    central_render(data);
+    showToast('✅ Données chargées.', 'success');
+  } catch(err) { console.error(err); showToast('Erreur de connexion', 'error'); }
+}
+
+function central_render(data) {
+  central_lastData = data.districts || [];
+  const manquants = central_lastData.filter(function(d) { return d.sans_emad || d.sans_ac; });
+  const total     = central_lastData.length;
+  const complets  = total - manquants.length;
+
+  document.getElementById('central-kpi-total').textContent     = total;
+  document.getElementById('central-kpi-sans-emad').textContent = central_lastData.filter(function(d){ return d.sans_emad; }).length;
+  document.getElementById('central-kpi-sans-ac').textContent   = central_lastData.filter(function(d){ return d.sans_ac;   }).length;
+  document.getElementById('central-kpi-complets').textContent  = complets;
+  document.getElementById('central-kpis').style.display  = 'block';
+  document.getElementById('central-empty').style.display = 'none';
+
+  if (manquants.length === 0) {
+    document.getElementById('central-wrap').style.display = 'none';
+    document.getElementById('central-ok').style.display   = 'block';
+    return;
+  }
+  document.getElementById('central-ok').style.display   = 'none';
+  document.getElementById('central-wrap').style.display = 'block';
+
+  const tbody = document.getElementById('central-tbody');
+  tbody.innerHTML = '';
+  manquants.forEach(function(d) {
+    const emadBadge = d.sans_emad
+      ? '<span class="badge badge-err">✗ Manquant</span>'
+      : '<span class="badge badge-ok">✓ ' + d.nb_emad + '</span>';
+    const acBadge = d.sans_ac
+      ? '<span class="badge badge-err">✗ Manquant</span>'
+      : '<span class="badge badge-ok">✓ ' + d.nb_ac + '</span>';
+    const bothMissing = d.sans_emad && d.sans_ac;
+    const statutBadge = bothMissing
+      ? '<span class="badge badge-err">Aucun acteur</span>'
+      : '<span class="badge" style="background:rgba(245,158,11,0.15);color:var(--warn);border:1px solid rgba(245,158,11,0.4);">Partiel</span>';
+    const tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td style="color:var(--label);font-size:0.82rem;">' + db_esc(d.region) + '</td>' +
+      '<td><strong>' + db_esc(d.district) + '</strong></td>' +
+      '<td class="center">' + emadBadge   + '</td>' +
+      '<td class="center">' + acBadge     + '</td>' +
+      '<td class="center">' + statutBadge + '</td>';
+    tbody.appendChild(tr);
+  });
+}
+
+function central_exportCSV() {
+  const manquants = central_lastData.filter(function(d) { return d.sans_emad || d.sans_ac; });
+  if (manquants.length === 0) { showToast('Aucune donnée à exporter.', 'error'); return; }
+  const headers = ['Région','District','Acteurs District','Acteurs Communautaires','Statut'];
+  const lines = [headers.join(',')];
+  manquants.forEach(function(d) {
+    const emad   = d.sans_emad ? 'Manquant' : d.nb_emad + ' acteur(s)';
+    const ac     = d.sans_ac   ? 'Manquant' : d.nb_ac   + ' acteur(s)';
+    const statut = (d.sans_emad && d.sans_ac) ? 'Aucun acteur' : 'Partiel';
+    lines.push([d.region, d.district, emad, ac, statut].map(function(v){ return '"'+String(v||'').replace(/"/g,'""')+'"'; }).join(','));
+  });
+  const blob = new Blob(['\uFEFF' + lines.join('\n')], { type:'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'Acteurs_Manquants_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+  showToast('✓ Export CSV téléchargé', 'success');
 }
 
 
