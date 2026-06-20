@@ -2124,12 +2124,19 @@ async function submitData() {
   var region=document.getElementById('ac-sel-region').value, district=document.getElementById('ac-sel-district').value;
   var acteurs=ac_rows.map(function(r){return{csb:r.csb.trim(),fokontany:r.fokontany.trim(),nom:r.nom.trim(),poste:r.poste.trim(),cin:r.cin.trim(),mvola:r.mvola.trim()};}).filter(function(r){return r.nom;});
   var payload={action:'saveActeursCommunautaires',region:region,district:district,acteurs:acteurs};
-  showToast('Envoi en cours…','');
+  showToast('⏳ Enregistrement en cours…','');
   try {
     var res=await fetch(GS_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
     var result=await res.json();
-    if(result.status==='ok') showToast('✓ '+acteurs.length+' acteur(s) enregistré(s) !','success');
-    else showToast(result.message||'Erreur Apps Script','error');
+    if(result.status==='ok') {
+      showToast('✅ '+acteurs.length+' acteur(s) enregistré(s) !','success');
+      // Tout effacer après enregistrement réussi
+      ac_rows=[]; ac_rowIdCounter=0; ac_currentPage=1; ac_searchQuery='';
+      document.getElementById('search-input').value='';
+      ac_renderTable();
+    } else {
+      showToast(result.message||'Erreur Apps Script','error');
+    }
   } catch(err) { console.error(err); showToast('Erreur de connexion','error'); }
 }
 
@@ -2454,8 +2461,14 @@ async function d_deleteSelected(){
   if(!sel.length)return;
   if(!confirm('Supprimer '+sel.length+' acteur(s) sélectionné(s) ?'))return;
   const region=document.getElementById('d-sel-region').value,district=document.getElementById('d-sel-district').value;
-  const toDelRemote=[],rows=[];
-  sel.forEach(function(ch){const tr=ch.closest('tr');rows.push(tr);const nom=tr.dataset.origNom;if(nom)toDelRemote.push({nom,poste:tr.dataset.origPoste,cin:tr.dataset.origCin});});
+  const toDelRemote=[],rows=[],rows_local_only=[];
+  sel.forEach(function(ch){
+    const tr=ch.closest('tr');rows.push(tr);
+    const nom  = tr.dataset.origNom   || tr.querySelector('.a-nom')?.value.trim()   || '';
+    const poste= tr.dataset.origPoste || tr.querySelector('.a-poste')?.value.trim() || '';
+    const cin  = tr.dataset.origCin   || tr.querySelector('.a-cin')?.value.trim()   || '';
+    if(nom&&tr.dataset.origNom) toDelRemote.push({nom,poste,cin});
+  });
   try{
     if(toDelRemote.length>0){showToast('⏳ Suppression…','');const res=await callSheet({action:'deleteMultipleActeurs',target:'district',region,district,acteurs:toDelRemote});if(res.status!=='ok'){showToast(res.message||'Erreur','error');return;}}
     rows.forEach(function(tr){tr.remove();});d_updateActeursCount();
@@ -2476,7 +2489,13 @@ async function r_deleteSelected(){
   if(!confirm('Supprimer '+sel.length+' acteur(s) sélectionné(s) ?'))return;
   const region=document.getElementById('r-sel-region').value;
   const toDelRemote=[],rows=[];
-  sel.forEach(function(ch){const tr=ch.closest('tr');rows.push(tr);const nom=tr.dataset.origNom;if(nom)toDelRemote.push({nom,poste:tr.dataset.origPoste,cin:tr.dataset.origCin});});
+  sel.forEach(function(ch){
+    const tr=ch.closest('tr');rows.push(tr);
+    const nom  = tr.dataset.origNom   || tr.querySelector('.a-nom')?.value.trim()   || '';
+    const poste= tr.dataset.origPoste || tr.querySelector('.a-poste')?.value.trim() || '';
+    const cin  = tr.dataset.origCin   || tr.querySelector('.a-cin')?.value.trim()   || '';
+    if(nom&&tr.dataset.origNom) toDelRemote.push({nom,poste,cin});
+  });
   try{
     if(toDelRemote.length>0){showToast('⏳ Suppression…','');const res=await callSheet({action:'deleteMultipleActeurs',target:'region',region,acteurs:toDelRemote});if(res.status!=='ok'){showToast(res.message||'Erreur','error');return;}}
     rows.forEach(function(tr){tr.remove();});r_updateActeursCount();
