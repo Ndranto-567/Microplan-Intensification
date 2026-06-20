@@ -3088,6 +3088,7 @@ function closeSettings() {
   document.getElementById('settings-overlay').classList.remove('open');
   document.getElementById('pin-input').value = '';
   document.getElementById('pin-error').style.display = 'none';
+  applyModules(); // repasser en vue utilisateur dès fermeture de la modal
 }
 function lockSettings(silent) {
   settingsUnlocked = false;
@@ -3095,7 +3096,6 @@ function lockSettings(silent) {
   document.getElementById('settings-content').style.display = 'none';
   document.getElementById('pin-input').value = '';
   document.getElementById('pin-error').style.display = 'none';
-  applyModules(); // repasser en mode utilisateur
 }
 function verifyPin() {
   const entered = document.getElementById('pin-input').value;
@@ -3105,7 +3105,7 @@ function verifyPin() {
     document.getElementById('settings-locked').style.display  = 'none';
     document.getElementById('settings-content').style.display = 'block';
     loadModuleToggles();
-    applyModules(); // admin voit tous les modules
+    applyModules(); // aperçu admin dans la modal
     document.getElementById('pin-input').value = '';
     document.getElementById('pin-error').style.display = 'none';
   } else {
@@ -3162,20 +3162,26 @@ function saveModules() {
   showToast('✅ Modules mis à jour', 'success');
 }
 
-// ── applyModules : admin voit tout, utilisateur voit seulement les modules actifs ──
+// ── applyModules ──
+// En mode normal (utilisateur) : masque les modules désactivés.
+// Quand la modal paramètres est OUVERTE (admin connecté) : montre tout
+// avec les modules désactivés estompés + badge, pour que l'admin puisse
+// gérer la config. Dès qu'il ferme la modal, la vue utilisateur reprend.
 function applyModules() {
-  const cfg     = JSON.parse(localStorage.getItem(MODULES_KEY) || '{}');
-  const isAdmin = settingsUnlocked;
+  const cfg          = JSON.parse(localStorage.getItem(MODULES_KEY) || '{}');
+  const modalOpen    = document.getElementById('settings-overlay').classList.contains('open');
+  const adminPreview = settingsUnlocked && modalOpen;
+
   MODULE_DEFS.forEach(function(m) {
     const card    = document.querySelector(m.cardSel);
     if (!card) return;
     const enabled = cfg[m.id] !== false;
-    if (isAdmin) {
-      // Admin : toujours visible, mais estompé + badge si désactivé
-      card.style.display  = '';
-      card.style.opacity  = enabled ? '1' : '0.45';
-      card.style.filter   = enabled ? '' : 'grayscale(0.6)';
-      // Badge "Désactivé"
+
+    if (adminPreview) {
+      // Admin dans la modal : voir tout, désactivés estompés
+      card.style.display = '';
+      card.style.opacity = enabled ? '1' : '0.45';
+      card.style.filter  = enabled ? '' : 'grayscale(0.6)';
       let badge = card.querySelector('.module-disabled-badge');
       if (!enabled) {
         if (!badge) {
@@ -3189,7 +3195,7 @@ function applyModules() {
         if (badge) badge.remove();
       }
     } else {
-      // Utilisateur : masquer les modules désactivés
+      // Vue utilisateur (ou admin hors modal) : appliquer la config réelle
       card.style.display = enabled ? '' : 'none';
       card.style.opacity = '';
       card.style.filter  = '';
