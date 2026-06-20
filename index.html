@@ -2599,14 +2599,21 @@ async function loadData() {
 }
 
 function exportCSV() {
-  if(ac_rows.length===0){showToast('Aucune donnée à exporter.','warn');return;}
-  var region=document.getElementById('ac-sel-region').value||'REGION', district=document.getElementById('ac-sel-district').value||'DISTRICT';
-  var headers=['Région','District','CSB','Fokontany','Nom et Prénom','Poste','CIN','Mobile Money'];
-  var lines=[headers.join(',')];
-  ac_rows.forEach(function(r){lines.push([region,district,r.csb,r.fokontany,r.nom,r.poste,r.cin,r.mvola].map(function(v){return'"'+String(v||'').replace(/"/g,'""')+'"';}).join(','));});
-  var blob=new Blob(['\uFEFF'+lines.join('\n')],{type:'text/csv;charset=utf-8;'});
-  var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='ActeursCommunautaires_'+district+'_'+new Date().toISOString().slice(0,10)+'.csv'; a.click();
-  showToast('✓ Export CSV téléchargé','success');
+  if (ac_rows.length === 0) { showToast('Aucune donnée à exporter.', 'error'); return; }
+  var region   = document.getElementById('ac-sel-region').value   || 'REGION';
+  var district = document.getElementById('ac-sel-district').value || 'DISTRICT';
+  var headers  = ['Région','District','CSB','Fokontany','Nom et Prénom','Poste','CIN','Mobile Money'];
+  var lines    = [headers.map(function(h){ return '"'+h+'"'; }).join(',')];
+  ac_rows.forEach(function(r) {
+    lines.push([region, district, r.csb, r.fokontany, r.nom, r.poste, r.cin, r.mvola]
+      .map(function(v){ return '"' + String(v||'').replace(/"/g,'""') + '"'; }).join(','));
+  });
+  var blob = new Blob(['\uFEFF' + lines.join('\n')], { type:'text/csv;charset=utf-8;' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'ActeursCommunautaires_' + district + '_' + new Date().toISOString().slice(0,10) + '.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  showToast('✅ Export CSV téléchargé', 'success');
 }
 
 function resetAll() {
@@ -3088,6 +3095,7 @@ function lockSettings(silent) {
   document.getElementById('settings-content').style.display = 'none';
   document.getElementById('pin-input').value = '';
   document.getElementById('pin-error').style.display = 'none';
+  applyModules(); // repasser en mode utilisateur
 }
 function verifyPin() {
   const entered = document.getElementById('pin-input').value;
@@ -3097,6 +3105,7 @@ function verifyPin() {
     document.getElementById('settings-locked').style.display  = 'none';
     document.getElementById('settings-content').style.display = 'block';
     loadModuleToggles();
+    applyModules(); // admin voit tous les modules
     document.getElementById('pin-input').value = '';
     document.getElementById('pin-error').style.display = 'none';
   } else {
@@ -3152,11 +3161,41 @@ function saveModules() {
   applyModules();
   showToast('✅ Modules mis à jour', 'success');
 }
+
+// ── applyModules : admin voit tout, utilisateur voit seulement les modules actifs ──
 function applyModules() {
-  const cfg = JSON.parse(localStorage.getItem(MODULES_KEY) || '{}');
+  const cfg     = JSON.parse(localStorage.getItem(MODULES_KEY) || '{}');
+  const isAdmin = settingsUnlocked;
   MODULE_DEFS.forEach(function(m) {
-    const card = document.querySelector(m.cardSel);
-    if (card) card.style.display = cfg[m.id] !== false ? '' : 'none';
+    const card    = document.querySelector(m.cardSel);
+    if (!card) return;
+    const enabled = cfg[m.id] !== false;
+    if (isAdmin) {
+      // Admin : toujours visible, mais estompé + badge si désactivé
+      card.style.display  = '';
+      card.style.opacity  = enabled ? '1' : '0.45';
+      card.style.filter   = enabled ? '' : 'grayscale(0.6)';
+      // Badge "Désactivé"
+      let badge = card.querySelector('.module-disabled-badge');
+      if (!enabled) {
+        if (!badge) {
+          badge = document.createElement('div');
+          badge.className = 'module-disabled-badge';
+          badge.style.cssText = 'font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--danger);margin-top:4px;';
+          badge.textContent = '🔴 Désactivé';
+          card.appendChild(badge);
+        }
+      } else {
+        if (badge) badge.remove();
+      }
+    } else {
+      // Utilisateur : masquer les modules désactivés
+      card.style.display = enabled ? '' : 'none';
+      card.style.opacity = '';
+      card.style.filter  = '';
+      const badge = card.querySelector('.module-disabled-badge');
+      if (badge) badge.remove();
+    }
   });
 }
 
@@ -3166,6 +3205,82 @@ document.addEventListener('DOMContentLoaded', function() {
   const storedUrl = localStorage.getItem(URL_KEY);
   if (storedUrl) GS_URL = storedUrl;
 });
+
+// ═══════════════════════════════════════════════════════
+//  EXPORT TABLEAU DE BORD (CSV + EXCEL)
+// ═══════════════════════════════════════════════════════
+function db_exportCSV() {
+  if (!db_lastData || !db_lastData.budget_rows || db_lastData.budget_rows.length === 0) {
+    showToast('Actualisez le tableau de bord avant d\'exporter.', 'error'); return;
+  }
+  const region = db_lastData.region || 'REGION';
+  const rows   = db_lastData.budget_rows;
+  // Construire les en-têtes dynamiquement depuis les groupes
+  const groups     = db_lastData.groups     || [];
+  const subHeaders = db_lastData.sub_headers || [];
+  const headerCols = ['District'];
+  groups.forEach(function(g) {
+    subHeaders.forEach(function(s) { headerCols.push(g.label + ' – ' + s); });
+  });
+  headerCols.push('Total');
+  const lines = [headerCols.map(function(h){ return '"'+h+'"'; }).join(',')];
+  rows.forEach(function(row) {
+    const cells = ['"' + (row.district||'') + '"'];
+    groups.forEach(function(g) {
+      subHeaders.forEach(function(s) {
+        const val = (row[g.key] && row[g.key][s]) ? row[g.key][s] : 0;
+        cells.push('"' + val + '"');
+      });
+    });
+    cells.push('"' + (row.total || 0) + '"');
+    lines.push(cells.join(','));
+  });
+  const blob = new Blob(['\uFEFF' + lines.join('\n')], { type:'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'Budget_' + region + '_' + new Date().toISOString().slice(0,10) + '.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  showToast('✅ Export CSV téléchargé', 'success');
+}
+
+function db_exportExcel() {
+  if (!db_lastData || !db_lastData.budget_rows || db_lastData.budget_rows.length === 0) {
+    showToast('Actualisez le tableau de bord avant d\'exporter.', 'error'); return;
+  }
+  // Utiliser SheetJS si disponible, sinon fallback CSV
+  if (typeof XLSX === 'undefined') {
+    showToast('Bibliothèque Excel non disponible — export CSV utilisé.', 'warn');
+    db_exportCSV(); return;
+  }
+  const region     = db_lastData.region || 'REGION';
+  const rows       = db_lastData.budget_rows;
+  const groups     = db_lastData.groups     || [];
+  const subHeaders = db_lastData.sub_headers || [];
+  // Construire tableau de données
+  const headerCols = ['District'];
+  groups.forEach(function(g) {
+    subHeaders.forEach(function(s) { headerCols.push(g.label + ' – ' + s); });
+  });
+  headerCols.push('Total');
+  const wsData = [headerCols];
+  rows.forEach(function(row) {
+    const cells = [row.district || ''];
+    groups.forEach(function(g) {
+      subHeaders.forEach(function(s) {
+        cells.push((row[g.key] && row[g.key][s]) ? row[g.key][s] : 0);
+      });
+    });
+    cells.push(row.total || 0);
+    wsData.push(cells);
+  });
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  // Largeur colonnes
+  ws['!cols'] = headerCols.map(function(h, i) { return { wch: i === 0 ? 22 : 16 }; });
+  XLSX.utils.book_append_sheet(wb, ws, 'Budget ' + region);
+  XLSX.writeFile(wb, 'Budget_' + region + '_' + new Date().toISOString().slice(0,10) + '.xlsx');
+  showToast('✅ Export Excel téléchargé', 'success');
+}
 
 // ═══════════════════════════════════════════════════════
 //  NIVEAU CENTRAL – Suivi national acteurs manquants
@@ -3243,7 +3358,7 @@ function central_exportCSV() {
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = 'Acteurs_Manquants_' + new Date().toISOString().slice(0,10) + '.csv';
-  a.click();
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
   showToast('✓ Export CSV téléchargé', 'success');
 }
 
